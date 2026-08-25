@@ -91,4 +91,20 @@ public interface AdmTlUsermstRepository extends JpaRepository<AdmTlUsermst, Stri
                         @Param("rememberValue") Integer rememberValue,
                         @Param("userId") String userId);
 
+                        @Query(value = """
+            SELECT
+                usrm.*
+            FROM public.adm_tl_usermst usrm
+            WHERE TRIM(usrm.usrm_ccno) =
+                  TRIM(:employeeKeyId)
+              AND COALESCE(
+                    TRIM(usrm.usrm_isactive),
+                    'N'
+                  ) = 'Y'
+            ORDER BY
+                usrm.usrm_keyid
+            """, nativeQuery = true)
+    List<AdmTlUsermst> findActiveUsersByEmployeeKeyId(
+            @Param("employeeKeyId") String employeeKeyId);
+
 }

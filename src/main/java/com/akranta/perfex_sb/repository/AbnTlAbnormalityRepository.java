@@ -100,4 +100,83 @@ public interface AbnTlAbnormalityRepository  extends JpaRepository<AbnTlAbnormal
                         AND ABNM_KEYID IN (:abnKeyIds) ORDER BY hdnAbnmdKeyid  
         """, nativeQuery = true)
     List<Map<String, Object>> findMultipleAbn(@Param("abnKeyIds") List<String> abnKeyIds);
+
+
+	@Query(value = """
+        SELECT DISTINCT
+            ''::text AS selectv,
+            CASE WHEN dmdm_keyid IS NULL OR dmdm_keyid = '' THEN '' ELSE '+' END AS attachment,
+            abnm_keyid AS tagno,
+            upper(to_char(abnm_detectiondate, 'DD-MON-YYYY HH24:MI')) AS detecteddate,
+            abnm_description AS item,
+            mchm_machinename AS machinemname,
+            a.empm_name AS detectedby,
+            c.empm_name AS responsiblityby,
+            CASE ABNM_REFDOCID WHEN '{}' THEN '-' ELSE ABNM_REFDOCID END AS mwno,
+            tagm_name AS tagclass,
+            functionalloc AS funloc,
+            assm_name AS assembly,
+            TO_CHAR(ABNM_DETECTIONDATE, 'DD-MON-YYYY') AS occureddate,
+            abtm_name AS abnormalitytype,
+            abnm_whyabnhappened AS whyabnormality,
+            abnm_whatcause AS whatcause,
+            abcm_name AS abnormalitycategory,
+            abim_name AS abnormalityimpact,
+            abnm_countermeasure AS countermeasure,
+            abnm_remarks AS remarks,
+            to_char(abnm_targetdate, 'DD-MON-YYYY') AS targetdate,
+            CASE abnm_status
+                WHEN 'P' THEN 'PENDING'
+                WHEN 'W' THEN 'WORK ORDER'
+                WHEN 'C' THEN 'COMPLETED'
+                WHEN 'D' THEN 'CANCELLED'
+                ELSE abnm_status
+            END AS status,
+            REPLACE(TO_CHAR(ABNM_WOSTARTTIME, 'DD-MON-YYYY HH24:MI'), '01-JAN-1801 00:00', '') AS wostart,
+            CASE
+                WHEN TAGM_ISTHROUGHWO = 'N' THEN
+                    REPLACE(REPLACE(TO_CHAR(ABNM_WOENDTIME, 'DD-MON-YYYY HH24:MI'),'31-DEC-2100 00:00',''),'01-JAN-1801 00:00', '')
+                ELSE
+                    REPLACE(TO_CHAR(ABNM_WOENDTIME, 'DD-MON-YYYY HH24:MI'),'31-DEC-2100 00:00','')
+            END AS woend,
+            replace(replace(to_char(abnm_woendtime, 'DD-MON-YYYY'),'31-DEC-2100',''),'01-JAN-1801','') AS completeddate,
+            CASE WHEN abnm_status = 'P' THEN '' ELSE b.empm_name END AS workdoneby,
+            to_char(
+                CASE
+                    WHEN abnm_status = 'P' THEN
+                        CASE WHEN current_date - abnm_detectiondate::date < 0 THEN 0
+                             ELSE (current_date - abnm_detectiondate::date) END
+                    WHEN abnm_status = 'C' THEN
+                        CASE WHEN abnm_woendtime::date - abnm_detectiondate::date < 0 THEN 0
+                             ELSE (abnm_woendtime::date - abnm_detectiondate::date) END
+                    ELSE NULL
+                END,
+            'FM9999999') AS days,
+            apld.apld_status,
+            abnm_refdoctype,
+            replace(abnm_refdocid,'{}','') AS refdoc,
+            CASE
+                WHEN TAGM_ISTHROUGHWO = 'N' THEN TO_CHAR(ABNM_WORECEIVEDDATE, 'DD-MON-YYYY')
+                ELSE TO_CHAR(ABNM_WORECEIVEDDATE, 'DD-MON-YYYY HH24:MI')
+            END AS abnm_receiveddate,
+            abnm_downtime::text AS downtime,
+            c.empm_name AS manpower,
+            to_char(abnm_detectiondate, 'YYYYMMDD') AS orderdate
+        FROM abn_tl_abnormality abn
+            LEFT JOIN gen_tl_employeemst a ON abn.abnm_detectedby = a.empm_keyid
+            LEFT JOIN gen_vw_fnln fnln ON abn.abnm_flid = fnln.fnln_keyid
+            LEFT JOIN abn_tl_typemst abtm ON abn.abnm_typeid = abtm.abtm_keyid
+            LEFT JOIN abn_tl_categorymst abcm ON abn.abnm_categoryid = abcm.abcm_keyid
+            LEFT JOIN abn_tl_impactmst abim ON abn.abnm_impactid = abim.abim_keyid
+            LEFT JOIN gen_tl_employeemst b ON abn.abnm_completedby = b.empm_keyid
+            LEFT JOIN gen_tl_employeemst c ON abn.abnm_responsibleid = c.empm_keyid
+            LEFT JOIN dcm_tl_documentmanager dmdm ON dmdm.dmdm_refdocno = abn.abnm_keyid
+            LEFT JOIN abn_tl_tagmst tagm ON tagm.tagm_keyid = abn.abnm_tagclassid
+            LEFT JOIN gen_tl_actionplanmst aplm ON aplm.aplm_detailrefid = abn.abnm_keyid
+            LEFT JOIN gen_tl_actionplandtl apld ON aplm.aplm_keyid = apld.apld_aplm_keyid
+            LEFT JOIN gen_tl_assemblymst ON abnm_assemblyid = assm_keyid
+        WHERE abn.abnm_active = 'Y'
+            AND abn.abnm_keyid IN (:keyIds)
+        """, nativeQuery = true)
+    List<Map<String, Object>> getUpdatedRowAbn(@Param("keyIds") List<String> keyIds);
 }

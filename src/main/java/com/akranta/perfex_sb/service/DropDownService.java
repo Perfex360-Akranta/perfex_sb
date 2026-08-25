@@ -450,25 +450,25 @@ public class DropDownService {
                 StringBuilder sql = new StringBuilder("""
                                 SELECT
                                        COMP_KEYID,
-                                       COMP_CODE,
+                                       TRIM(COMP_NAME) || ' - ' || TRIM(COMP_CODE),
 
                                        LOCN_KEYID,
-                                       LOCN_CODE,
+                                       LOCN_NAME || '-' || LOCN_CODE,
 
                                        SBUT_KEYID,
-                                       SBUT_CODE,
+                                       SBUT_NAME || '-' || SBUT_CODE,
 
                                        PBUT_KEYID,
-                                       PBUT_CODE,
+                                       PBUT_NAME || '-' || PBUT_CODE,
 
                                        SECT_KEYID,
-                                       SECT_CODE,
+                                       TRIM(SECT_NAME) || ' - ' || TRIM(SECT_CODE),
 
                                        CELL_KEYID,
-                                       CELL_NAME,
+                                       TRIM(CELL_CODE) || ' - ' || TRIM(CELL_NAME),
 
                                        MCHM_KEYID,
-                                       MCHM_MACHINENO,
+                                       TRIM(MCHM_MACHINENAME) || '-' || TRIM(MCHM_MACHINENO),
 
                                        FNLN_KEYID,
                                        FNLN_ELEMENTID,
@@ -483,20 +483,18 @@ public class DropDownService {
                         sql.append(" AND FNLN_KEYID = :flid ");
                         params.put("flid", flid);
                 } else if (isValid(originalId)) {
-                        // sql.append("""
-                        //                 AND (
-                        //                        COMP_KEYID = :originalId
-                        //                     OR LOCN_KEYID = :originalId
-                        //                     OR SBUT_KEYID = :originalId
-                        //                     OR PBUT_KEYID = :originalId
-                        //                     OR SECT_KEYID = :originalId
-                        //                     OR CELL_KEYID = :originalId
-                        //                     OR MCHM_KEYID = :originalId
-                        //                 )
-                        //                 """);
-                        sql.append(" AND fnln_originalid = :originalId  ");
+                        sql.append("""
+                                        AND (
+                                               COMP_KEYID = :originalId
+                                            OR LOCN_KEYID = :originalId
+                                            OR SBUT_KEYID = :originalId
+                                            OR PBUT_KEYID = :originalId
+                                            OR SECT_KEYID = :originalId
+                                            OR CELL_KEYID = :originalId
+                                            OR MCHM_KEYID = :originalId
+                                        )
+                                        """);
                         params.put("originalId", originalId);
-                        
                 } else {
                         return null;
                 }
