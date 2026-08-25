@@ -43,6 +43,11 @@ public class PcsEntryController {
     // }
     
 
+    @GetMapping("/getCurrentShift")
+public String getCurrentShift() {
+    return pcsEntryService.getCurrentShift();
+}
+
     @PostMapping("/lossEntryGrid")
 public List<Map<String,Object>> lossEntryGrid(@RequestBody PcsLossEntryGridRequestDto dto) {
     return pcsEntryService.getLossEntryGrid(dto);

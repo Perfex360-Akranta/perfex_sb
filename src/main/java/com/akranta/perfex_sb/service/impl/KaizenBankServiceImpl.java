@@ -3,6 +3,7 @@ package com.akranta.perfex_sb.service.impl;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -131,6 +132,11 @@ public class KaizenBankServiceImpl implements KaizenBankService {
         }
 
         return kaizenBankRepository.saveAll(mltSuggs);
+    }
+
+    @Override
+    public List<Map<String, Object>> findCategoryRecall(String keyid) throws Exception {
+        return kaizenBankRepository.findCategoryRecall(keyid);
     }
 }
 

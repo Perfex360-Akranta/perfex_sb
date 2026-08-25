@@ -3,6 +3,7 @@ package com.akranta.perfex_sb.service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import com.akranta.perfex_sb.model.KznTlKaizenBankMst;
 
@@ -21,9 +22,8 @@ public interface KaizenBankService {
 
 
     public List<KznTlKaizenBankMst> multipleSave(List<KznTlKaizenBankMst> mltSuggs);
-
-   
-
+    
+    List<Map<String, Object>> findCategoryRecall(String keyid) throws Exception;
     
 
     

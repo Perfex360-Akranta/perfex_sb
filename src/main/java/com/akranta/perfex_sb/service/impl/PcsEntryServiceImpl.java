@@ -25,6 +25,27 @@ public class PcsEntryServiceImpl implements PcsEntryService {
         this.jdbcRepository = jdbcRepository;
     }
 
+
+     @Override
+    @Transactional(readOnly = true)
+    public String getCurrentShift( ) {
+
+       List<String> shifts = repository.getCurrentShift1();
+       if (shifts != null && !shifts.isEmpty()
+            && shifts.get(0) != null
+            && !shifts.get(0).trim().isEmpty()) {
+        return shifts.get(0);
+       }
+      shifts = repository.getCurrentShift2();
+      if (shifts != null && !shifts.isEmpty()
+            && shifts.get(0) != null
+            && !shifts.get(0).trim().isEmpty()) {
+        return shifts.get(0); 
+        }
+
+    return "";
+    }
+    
     @Override
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getLossEntryGrid(PcsLossEntryGridRequestDto dto) {

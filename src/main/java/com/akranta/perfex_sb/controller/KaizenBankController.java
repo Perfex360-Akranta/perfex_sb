@@ -86,6 +86,17 @@ public class KaizenBankController {
 
         return ResponseEntity.ok(saved);
     }
+
+
+@GetMapping("/categoryRecall/{keyid}")
+    public ResponseEntity<List<Map<String, Object>>> categoryRecall(@PathVariable String keyid) {
+        try {
+            List<Map<String, Object>> result = kaizenBankService.findCategoryRecall(keyid);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
 }
 
 // BigDecimal implementCost = req.get("implementCost") != null

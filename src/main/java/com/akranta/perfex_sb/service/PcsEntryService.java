@@ -18,7 +18,7 @@ public interface PcsEntryService {
      */
    // List<Map<String, Object>> getLossEntryGrid(PcsEntryDto dto);
 
-
+    String getCurrentShift();
     List<Map<String, Object>> getLossEntryGrid(PcsLossEntryGridRequestDto dto);
 
     List<Map<String, Object>> getPcsLossCaptureGrid(PcsLossCaptureGridRequestDto dto);

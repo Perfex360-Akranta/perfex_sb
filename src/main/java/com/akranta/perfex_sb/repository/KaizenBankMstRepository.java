@@ -4,6 +4,8 @@ package com.akranta.perfex_sb.repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -65,6 +67,10 @@ public interface KaizenBankMstRepository extends JpaRepository<KznTlKaizenBankMs
         nativeQuery = true
     )
     int deleteApprovalByDocNo(@Param("keyId") String keyId);
+
+    @Query(value = "SELECT KZCT_KEYID AS keyid, KZCT_CODE AS code, KZCT_NAME AS name " +
+                   "FROM KZN_TL_CATEGORYTHMMST WHERE KZCT_KEYID = :keyid", nativeQuery = true)
+    List<Map<String, Object>> findCategoryRecall(@Param("keyid") String keyid);
 }
 
 

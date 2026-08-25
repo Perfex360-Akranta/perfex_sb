@@ -167,4 +167,20 @@ ORDER BY t.dataorder
         @Param("toDate") String toDate,
         @Param("shiftId") String shiftId
     );
+
+
+     @Query(value = """
+SELECT SFTM_KEYID FROM GEN_TL_SHIFTMST  WHERE SFTM_ACTIVE = 'Y' 
+		 AND CURRENT_TIME BETWEEN SFTM_STARTTIME AND SFTM_ENDTIME 
+""", nativeQuery = true)
+    List<String> getCurrentShift1();
+
+    @Query(value = """
+SELECT SFTM_KEYID FROM GEN_TL_SHIFTMST 
+		 WHERE (Now()::time BETWEEN SFTM_STARTTIME::time  AND to_timestamp('23:59','HH24:MI')::time  OR 
+		 Now()::time BETWEEN   to_timestamp('00:00','HH24:MI')::time AND SFTM_ENDTIME::time) AND 
+		 SFTM_ENDTIME::time < to_timestamp('06:01','HH24:MI')::time 
+		 AND SFTM_ACTIVE = 'Y' 
+""", nativeQuery = true)
+    List<String> getCurrentShift2();
 }
