@@ -16,6 +16,7 @@ import com.akranta.perfex_sb.service.KaizenBankService;
 import com.akranta.perfex_sb.service.DbActionTemplate;
 import com.akranta.perfex_sb.util.ValidationUtil;
 
+import io.micrometer.common.lang.NonNull;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -137,6 +138,15 @@ public class KaizenBankServiceImpl implements KaizenBankService {
     @Override
     public List<Map<String, Object>> findCategoryRecall(String keyid) throws Exception {
         return kaizenBankRepository.findCategoryRecall(keyid);
+    }
+
+    @Override
+    public String deleteSuggestionById( String keyId) 
+    {
+
+         kaizenBankRepository.deleteById(keyId);
+         return "Deleted";
+        
     }
 }
 

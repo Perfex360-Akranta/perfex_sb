@@ -97,6 +97,15 @@ public class KaizenBankController {
             return ResponseEntity.status(500).build();
         }
     }
+
+    
+    @PostMapping("/deleteById/{keyId}")
+    public String deleteById(@PathVariable String keyId) {
+
+        String deleted = kaizenBankService.deleteSuggestionById(keyId);
+
+        return deleted;
+    }
 }
 
 // BigDecimal implementCost = req.get("implementCost") != null

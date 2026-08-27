@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.web.bind.annotation.PathVariable;
+
 import com.akranta.perfex_sb.model.KznTlKaizenBankMst;
 
 public interface KaizenBankService {
@@ -24,6 +26,9 @@ public interface KaizenBankService {
     public List<KznTlKaizenBankMst> multipleSave(List<KznTlKaizenBankMst> mltSuggs);
     
     List<Map<String, Object>> findCategoryRecall(String keyid) throws Exception;
+
+
+    public String deleteSuggestionById( @PathVariable String keyId);
     
 
     
