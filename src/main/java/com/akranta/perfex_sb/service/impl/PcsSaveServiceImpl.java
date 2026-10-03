@@ -1,4 +1,4 @@
-﻿package com.akranta.perfex_sb.service.impl;
+package com.akranta.perfex_sb.service.impl;
 
 import com.akranta.perfex_sb.dto.PcsSaveRequestDto;
 import com.akranta.perfex_sb.model.PcsTlLosscapture;
@@ -61,11 +61,16 @@ public class PcsSaveServiceImpl implements PcsSaveService {
     @Override
     @Transactional
     public PcsTlLosscapture save(PcsSaveRequestDto request) {
-        if (request == null) throw new IllegalArgumentException("Request is null");
-        if (request.getMaster() == null) throw new IllegalArgumentException("Master payload is required");
-        if (request.getDetail() == null) throw new IllegalArgumentException("Detail payload is required");
-        if (request.getLossCapture() == null) throw new IllegalArgumentException("Loss capture payload is required");
-        if (request.getLossReasonLink() == null) throw new IllegalArgumentException("Loss reason link payload is required");
+        if (request == null)
+            throw new IllegalArgumentException("Request is null");
+        if (request.getMaster() == null)
+            throw new IllegalArgumentException("Master payload is required");
+        if (request.getDetail() == null)
+            throw new IllegalArgumentException("Detail payload is required");
+        if (request.getLossCapture() == null)
+            throw new IllegalArgumentException("Loss capture payload is required");
+        if (request.getLossReasonLink() == null)
+            throw new IllegalArgumentException("Loss reason link payload is required");
 
         LocalDateTime now = LocalDateTime.now();
         PcsSaveRequestDto.PcsMasterDto master = request.getMaster();
@@ -89,11 +94,16 @@ public class PcsSaveServiceImpl implements PcsSaveService {
         if (lossCapture.getPlosDate() == null && master.getPrlmEntrydate() != null) {
             lossCapture.setPlosDate(master.getPrlmEntrydate());
         }
-        if (isBlank(master.getPrlmShiftid())) master.setPrlmShiftid(lossCapture.getPlosShiftid());
-        if (isBlank(master.getPrlmFlid())) master.setPrlmFlid(lossCapture.getPlosFlid());
-        if (isBlank(master.getPrlmEntryby())) master.setPrlmEntryby(lossCapture.getPlosCreatedby());
-        if (isBlank(master.getPrlmUpdatedby())) master.setPrlmUpdatedby(lossCapture.getPlosCreatedby());
-        if (isBlank(master.getPrlmCreatedby())) master.setPrlmCreatedby(lossCapture.getPlosCreatedby());
+        if (isBlank(master.getPrlmShiftid()))
+            master.setPrlmShiftid(lossCapture.getPlosShiftid());
+        if (isBlank(master.getPrlmFlid()))
+            master.setPrlmFlid(lossCapture.getPlosFlid());
+        if (isBlank(master.getPrlmEntryby()))
+            master.setPrlmEntryby(lossCapture.getPlosCreatedby());
+        if (isBlank(master.getPrlmUpdatedby()))
+            master.setPrlmUpdatedby(lossCapture.getPlosCreatedby());
+        if (isBlank(master.getPrlmCreatedby()))
+            master.setPrlmCreatedby(lossCapture.getPlosCreatedby());
 
         // Section from cell â€” must be populated before resolveDetailTable
         if (isBlank(master.getPrlmCellid()) && !isBlank(detail.getCellid())) {
@@ -107,21 +117,33 @@ public class PcsSaveServiceImpl implements PcsSaveService {
             master.setPrlmSectionid(repository.findSectionIdByCellId(cellIdForSection));
         }
 
-        if (master.getPrlmCreatedon() == null) master.setPrlmCreatedon(now);
-        if (master.getPrlmModifiedon() == null) master.setPrlmModifiedon(now);
-        if (isBlank(master.getPrlmActive())) master.setPrlmActive("Y");
+        if (master.getPrlmCreatedon() == null)
+            master.setPrlmCreatedon(now);
+        if (master.getPrlmModifiedon() == null)
+            master.setPrlmModifiedon(now);
+        if (isBlank(master.getPrlmActive()))
+            master.setPrlmActive("Y");
 
-        if (detail.getCreatedon() == null) detail.setCreatedon(now);
-        if (detail.getModifiedon() == null) detail.setModifiedon(now);
-        if (isBlank(detail.getActive())) detail.setActive("Y");
+        if (detail.getCreatedon() == null)
+            detail.setCreatedon(now);
+        if (detail.getModifiedon() == null)
+            detail.setModifiedon(now);
+        if (isBlank(detail.getActive()))
+            detail.setActive("Y");
 
-        if (lossReason.getPlrkCreatedon() == null) lossReason.setPlrkCreatedon(now);
-        if (lossReason.getPlrkModifiedon() == null) lossReason.setPlrkModifiedon(now);
-        if (isBlank(lossReason.getPlrkActive())) lossReason.setPlrkActive("Y");
+        if (lossReason.getPlrkCreatedon() == null)
+            lossReason.setPlrkCreatedon(now);
+        if (lossReason.getPlrkModifiedon() == null)
+            lossReason.setPlrkModifiedon(now);
+        if (isBlank(lossReason.getPlrkActive()))
+            lossReason.setPlrkActive("Y");
 
-        if (lossCapture.getPlosCreatedon() == null) lossCapture.setPlosCreatedon(now);
-        if (lossCapture.getPlosModifiedon() == null) lossCapture.setPlosModifiedon(now);
-        if (isBlank(lossCapture.getPlosActive())) lossCapture.setPlosActive("Y");
+        if (lossCapture.getPlosCreatedon() == null)
+            lossCapture.setPlosCreatedon(now);
+        if (lossCapture.getPlosModifiedon() == null)
+            lossCapture.setPlosModifiedon(now);
+        if (isBlank(lossCapture.getPlosActive()))
+            lossCapture.setPlosActive("Y");
 
         boolean isUpdateEntry = isValidKey(lossCapture.getPlosKeyid())
                 && repository.lossCaptureExists(lossCapture.getPlosKeyid());
@@ -131,12 +153,14 @@ public class PcsSaveServiceImpl implements PcsSaveService {
         if (isUpdateEntry) {
             String linkedDetailId = repository.findDetailIdByLossCaptureId(lossCapture.getPlosKeyid());
             if (!isValidKey(linkedDetailId)) {
-                logger.warn("Loss capture {} has no linked detail id; treating request as NEW.", lossCapture.getPlosKeyid());
+                logger.warn("Loss capture {} has no linked detail id; treating request as NEW.",
+                        lossCapture.getPlosKeyid());
                 isUpdateEntry = false;
             } else {
                 String linkedDetailTable = repository.findDetailTableByDetailId(linkedDetailId);
                 if (isBlank(linkedDetailTable)) {
-                    logger.warn("Linked detail {} for loss capture {} not found in any detail table; treating request as NEW.",
+                    logger.warn(
+                            "Linked detail {} for loss capture {} not found in any detail table; treating request as NEW.",
                             linkedDetailId, lossCapture.getPlosKeyid());
                     isUpdateEntry = false;
                 } else {
@@ -149,7 +173,8 @@ public class PcsSaveServiceImpl implements PcsSaveService {
         boolean isNewEntry = !isUpdateEntry;
         if (isNewEntry) {
             detailTable = resolveDetailTable(request);
-            // Always allocate fresh keys for create flow even if stale keys come from frontend.
+            // Always allocate fresh keys for create flow even if stale keys come from
+            // frontend.
             detail.setPldetailsid(null);
             lossReason.setPlrkKeyid(null);
             lossCapture.setPlosKeyid(null);
@@ -160,15 +185,15 @@ public class PcsSaveServiceImpl implements PcsSaveService {
         String existingMasterId = repository.findExistingMasterId(
                 master.getPrlmEntrydate(),
                 master.getPrlmShiftid(),
-                master.getPrlmFlid()
-        );
+                master.getPrlmFlid());
 
         if (existingMasterId != null) {
             master.setPrlmKeyid(existingMasterId);
             master.setPrlmModifiedon(now);
         } else {
             master.setPrlmKeyid(null);
-            ensureKey(master, MASTER_SEQ_IDENTIFIER, MASTER_KEY_LENGTH, MASTER_PREFIX, MASTER_DATE_FORMAT, MASTER_FORMAT_RESET);
+            ensureKey(master, MASTER_SEQ_IDENTIFIER, MASTER_KEY_LENGTH, MASTER_PREFIX, MASTER_DATE_FORMAT,
+                    MASTER_FORMAT_RESET);
         }
 
         // --- Detail: one per master ---
@@ -188,12 +213,15 @@ public class PcsSaveServiceImpl implements PcsSaveService {
 
         shouldInsertDetail = !isValidKey(detail.getPldetailsid());
         if (shouldInsertDetail) {
-            ensureKey(detail, DETAIL_SEQ_IDENTIFIER, DETAIL_KEY_LENGTH, DETAIL_PREFIX, DETAIL_DATE_FORMAT, DETAIL_FORMAT_RESET);
+            ensureKey(detail, DETAIL_SEQ_IDENTIFIER, DETAIL_KEY_LENGTH, DETAIL_PREFIX, DETAIL_DATE_FORMAT,
+                    DETAIL_FORMAT_RESET);
         }
 
         // Generate keys for anything still missing
-        ensureKey(lossReason, LOSS_REASON_SEQ_IDENTIFIER, LOSS_REASON_KEY_LENGTH, LOSS_REASON_PREFIX, LOSS_REASON_DATE_FORMAT, LOSS_REASON_FORMAT_RESET);
-        ensureKey(lossCapture, LOSS_CAPTURE_SEQ_IDENTIFIER, LOSS_CAPTURE_KEY_LENGTH, LOSS_CAPTURE_PREFIX, LOSS_CAPTURE_DATE_FORMAT, LOSS_CAPTURE_FORMAT_RESET);
+        ensureKey(lossReason, LOSS_REASON_SEQ_IDENTIFIER, LOSS_REASON_KEY_LENGTH, LOSS_REASON_PREFIX,
+                LOSS_REASON_DATE_FORMAT, LOSS_REASON_FORMAT_RESET);
+        ensureKey(lossCapture, LOSS_CAPTURE_SEQ_IDENTIFIER, LOSS_CAPTURE_KEY_LENGTH, LOSS_CAPTURE_PREFIX,
+                LOSS_CAPTURE_DATE_FORMAT, LOSS_CAPTURE_FORMAT_RESET);
 
         // Sync master ID into detail and loss reason link
         detail.setPlmasterid(master.getPrlmKeyid());
@@ -228,7 +256,8 @@ public class PcsSaveServiceImpl implements PcsSaveService {
 
         // --- Loss cause (ensure exists before inserting reason link) ---
         if (isBlank(lossReason.getPlrkCauseid()) && !isBlank(lossReason.getPlrkReasonid())) {
-            String newCauseId = generateSequence(LOSS_CAUSE_SEQ_IDENTIFIER, LOSS_CAUSE_KEY_LENGTH, LOSS_CAUSE_PREFIX, LOSS_CAUSE_DATE_FORMAT, LOSS_CAUSE_FORMAT_RESET);
+            String newCauseId = generateSequence(LOSS_CAUSE_SEQ_IDENTIFIER, LOSS_CAUSE_KEY_LENGTH, LOSS_CAUSE_PREFIX,
+                    LOSS_CAUSE_DATE_FORMAT, LOSS_CAUSE_FORMAT_RESET);
             lossReason.setPlrkCauseid(newCauseId);
             if (!repository.lossCauseExists(newCauseId)) {
                 int cnt = repository.insertLossCause(newCauseId, lossReason.getPlrkReasonid(), "-");
@@ -360,7 +389,8 @@ public class PcsSaveServiceImpl implements PcsSaveService {
     }
 
     private Character toCharFlag(String val) {
-        if (isBlank(val)) return null;
+        if (isBlank(val))
+            return null;
         String trimmed = val.trim();
         return trimmed.isEmpty() ? null : Character.toUpperCase(trimmed.charAt(0));
     }
@@ -373,13 +403,17 @@ public class PcsSaveServiceImpl implements PcsSaveService {
         }
     }
 
-    private void syncLossColumn(String detailTable, PcsSaveRequestDto.PcsDetailDto detail, PcsSaveRequestDto.PcsLossReasonLinkDto lossReason) {
-        if (detail == null || lossReason == null) return;
-        if (isBlank(detail.getPldetailsid()) || isBlank(lossReason.getPlrkLossid())) return;
+    private void syncLossColumn(String detailTable, PcsSaveRequestDto.PcsDetailDto detail,
+            PcsSaveRequestDto.PcsLossReasonLinkDto lossReason) {
+        if (detail == null || lossReason == null)
+            return;
+        if (isBlank(detail.getPldetailsid()) || isBlank(lossReason.getPlrkLossid()))
+            return;
 
         String col = resolveLossColumnName(detail, lossReason);
         if (col == null) {
-            logger.warn("No loss column resolved for detailId={} lossId={}", detail.getPldetailsid(), lossReason.getPlrkLossid());
+            logger.warn("No loss column resolved for detailId={} lossId={}", detail.getPldetailsid(),
+                    lossReason.getPlrkLossid());
             return;
         }
 
@@ -387,18 +421,22 @@ public class PcsSaveServiceImpl implements PcsSaveService {
             BigDecimal total = repository.sumLossMinutes(detail.getPldetailsid(), lossReason.getPlrkLossid());
             int cnt = repository.updateSingleLossColumn(detailTable, detail.getPldetailsid(), col, total);
             if (cnt <= 0) {
-                logger.warn("Skipping loss column sync for detailId={} table={} column={}", detail.getPldetailsid(), detailTable, col);
+                logger.warn("Skipping loss column sync for detailId={} table={} column={}", detail.getPldetailsid(),
+                        detailTable, col);
             }
         } catch (Exception ex) {
-            // Do not roll back the whole save if a single derived loss column cannot be synced.
+            // Do not roll back the whole save if a single derived loss column cannot be
+            // synced.
             logger.warn("Loss column sync failed for detailId={} table={} column={} reason={}",
                     detail.getPldetailsid(), detailTable, col, ex.getMessage());
         }
     }
 
-    private String resolveLossColumnName(PcsSaveRequestDto.PcsDetailDto detail, PcsSaveRequestDto.PcsLossReasonLinkDto lossReason) {
+    private String resolveLossColumnName(PcsSaveRequestDto.PcsDetailDto detail,
+            PcsSaveRequestDto.PcsLossReasonLinkDto lossReason) {
         Map<String, BigDecimal> losses = detail.getLosses();
-        if (losses == null || losses.isEmpty()) return null;
+        if (losses == null || losses.isEmpty())
+            return null;
 
         if (losses.size() == 1) {
             return normalizeLossKey(losses.keySet().iterator().next());
@@ -418,9 +456,12 @@ public class PcsSaveServiceImpl implements PcsSaveService {
                 .sorted((a, b) -> {
                     boolean aMatch = a.matches("loss\\d{2}");
                     boolean bMatch = b.matches("loss\\d{2}");
-                    if (aMatch && bMatch) return a.compareTo(b);
-                    if (aMatch) return -1;
-                    if (bMatch) return 1;
+                    if (aMatch && bMatch)
+                        return a.compareTo(b);
+                    if (aMatch)
+                        return -1;
+                    if (bMatch)
+                        return 1;
                     return a.compareTo(b);
                 })
                 .map(this::normalizeLossKey)
@@ -430,9 +471,11 @@ public class PcsSaveServiceImpl implements PcsSaveService {
     }
 
     private String normalizeLossKey(String key) {
-        if (key == null) return null;
+        if (key == null)
+            return null;
         String k = key.trim().toLowerCase();
-        if (!k.matches("^[a-z0-9_]+$")) return null;
+        if (!k.matches("^[a-z0-9_]+$"))
+            return null;
         return k;
     }
 
