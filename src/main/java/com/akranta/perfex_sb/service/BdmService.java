@@ -1,6 +1,9 @@
 package com.akranta.perfex_sb.service;
 
 import com.akranta.perfex_sb.dto.BdmDto;
+import com.akranta.perfex_sb.dto.BreakdownAllocationMobileDTO;
+import com.akranta.perfex_sb.dto.BreakdownBookingMobileDTO;
+import com.akranta.perfex_sb.dto.BreakdownCompletionMobileDTO;
 import com.akranta.perfex_sb.dto.EmpCostDto;
 import com.akranta.perfex_sb.model.BAL_BdmTlDtl;
 import com.akranta.perfex_sb.model.BAL_BdmTlMst;
@@ -26,6 +29,12 @@ public interface BdmService {
 
     
     ResponseEntity<BdmDto> saveBdm(BdmDto request) throws Exception;
+
+    ResponseEntity<BdmDto> saveBreakdownBooking(BreakdownBookingMobileDTO request) throws Exception;
+
+    ResponseEntity<BdmDto> saveBreakdownAllocation(BreakdownAllocationMobileDTO request) throws Exception;
+
+    ResponseEntity<BdmDto> saveBreakdownCompletion(BreakdownCompletionMobileDTO request) throws Exception;
      List<Map<String, Object>> getGridSummary(String woId) throws Exception;
     
 

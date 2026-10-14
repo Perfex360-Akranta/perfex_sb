@@ -81,7 +81,7 @@ public class BAL_BdmTlMst {
     @Column(name = "bdms_finalphenomena", length = 15, nullable = false)
     private String finalphenomena;
 
-    @Column(name = "bdms_finalcause", length = 9, nullable = false)
+    @Column(name = "bdms_finalcause", length = 12, nullable = false)
     private String finalcause;
 
     @Column(name = "bdms_bookedtrade", length = 15, nullable = false)

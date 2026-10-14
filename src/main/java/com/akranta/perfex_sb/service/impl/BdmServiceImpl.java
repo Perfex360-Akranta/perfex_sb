@@ -1,6 +1,9 @@
 package com.akranta.perfex_sb.service.impl;
 
 import com.akranta.perfex_sb.dto.BdmDto;
+import com.akranta.perfex_sb.dto.BreakdownAllocationMobileDTO;
+import com.akranta.perfex_sb.dto.BreakdownBookingMobileDTO;
+import com.akranta.perfex_sb.dto.BreakdownCompletionMobileDTO;
 import com.akranta.perfex_sb.exception.ResourceNotFoundException;
 import com.akranta.perfex_sb.model.BAL_BdmTlDtl;
 import com.akranta.perfex_sb.model.BAL_BdmTlMst;
@@ -30,6 +33,7 @@ import com.akranta.perfex_sb.model.WomTlWomst;
 import com.akranta.perfex_sb.repository.BAL_BdmTlDtlRepository;
 import com.akranta.perfex_sb.repository.BAL_BdmTlMstRepository;
 import com.akranta.perfex_sb.repository.BAL_BdmTlMultipleRespRepository;
+import com.akranta.perfex_sb.repository.BreakdownBookingMobileRepo;
 import com.akranta.perfex_sb.repository.BAL_WomTlManpowercostactualRepository;
 import com.akranta.perfex_sb.repository.BAL_WomTlManpowercostplanRepository;
 import com.akranta.perfex_sb.repository.BAL_WomTlOthercostactualRepository;
@@ -55,6 +59,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 
 import java.util.List;
@@ -75,9 +81,10 @@ public class BdmServiceImpl implements BdmService {
     private static final String SEQ_DETAIL  = "BAL_BDM_TL_DTL";
     private static final String SEQ_WOM     = "BAL_WOM_TL_WOMST";
      private static final String SEQ_COMM    = "WOM_TL_COMMUNICATIONLOG";
-     // added here by priyanka  on 18/09/2026
+
+      // added here by priyanka  on 18/09/2026
     private static final String SEQ_MULTI_RESP = "BAL_BDM_TL_MULTIPLE_RESP";
-    // end 
+    // end
 
     private static final int    KEY_LEN_MASTER = 20;
     private static final int    KEY_LEN_DETAIL = 14;
@@ -98,6 +105,10 @@ public class BdmServiceImpl implements BdmService {
     // Config key for YY-analysis mandatory flag
     private static final String CONFIG_ISYYMANDATRY = "ISYYMANDATRY";
 
+    private static final String EMPTY_PLACEHOLDER = "{}";
+    private static final LocalDateTime PAST_NULL_DATETIME = LocalDateTime.of(1801, 1, 1, 0, 0);
+    private static final LocalDateTime FUTURE_NULL_DATETIME = LocalDateTime.of(2100, 12, 31, 0, 0);
+
     // ── Dependencies ─────────────────────────────────────────────────────────
     private final BAL_BdmTlMstRepository masterRepository;
     private final BAL_BdmTlDtlRepository detailRepository;
@@ -113,10 +124,13 @@ public class BdmServiceImpl implements BdmService {
     private final BAL_WomTlUtilitycostactualRepository   utilitycostactualRepository;
      private final BAL_WomTlOthercostactualRepository     othercostactualRepository;
 private final wom_tl_communicationlogRepository communicationRepository;
+    private final BreakdownBookingMobileRepo breakdownBookingMobileRepo;
     private final DbActionTemplate       dbActionTemplate;
-    // added here by priyanka on 18/09/2026
+     // added here by priyanka on 18/09/2026
     private final BAL_BdmTlMultipleRespRepository multiRespRepo;
     // end
+
+     
 
     public BdmServiceImpl(BAL_BdmTlMstRepository masterRepository,
                           BAL_BdmTlDtlRepository detailRepository,
@@ -131,8 +145,9 @@ private final wom_tl_communicationlogRepository communicationRepository;
                             BAL_WomTlServicecostactualRepository servicecostactualRepository,
                             BAL_WomTlUtilitycostactualRepository utilitycostactualRepository,
                               BAL_WomTlOthercostactualRepository othercostactualRepository,
-                              wom_tl_communicationlogRepository communicationRepository, 
-                              BAL_BdmTlMultipleRespRepository multiRespRepo,    // added by priyanka on 18/09/2026                             
+                              BAL_BdmTlMultipleRespRepository multiRespRepo,    // added by priyanka on 18/09/2026   
+                              wom_tl_communicationlogRepository communicationRepository,
+                              BreakdownBookingMobileRepo breakdownBookingMobileRepo,
                                 DbActionTemplate       dbActionTemplate) {
         this.masterRepository = masterRepository;
         this.detailRepository = detailRepository;
@@ -151,6 +166,7 @@ private final wom_tl_communicationlogRepository communicationRepository;
          // added here by priyanka on 18/09/2026                        
         this.multiRespRepo    = multiRespRepo;
         //end
+         this.breakdownBookingMobileRepo = breakdownBookingMobileRepo;
 
         this.dbActionTemplate = dbActionTemplate;
     }
@@ -176,6 +192,343 @@ private final wom_tl_communicationlogRepository communicationRepository;
             return doInsert(master, detail, request);
         } else {
             return doUpdate(master, detail, request);
+        }
+    }
+
+    @Override
+    @Transactional
+    public ResponseEntity<BdmDto> saveBreakdownBooking(BreakdownBookingMobileDTO request) throws Exception {
+        if (request == null) {
+            throw new IllegalArgumentException("Booking request is required");
+        }
+        if (isBlankOrPlaceholder(request.getMachineid()) && isBlankOrPlaceholder(request.getFlid())) {
+            throw new IllegalArgumentException("machineid or flid is required");
+        }
+        if (isBlankOrPlaceholder(request.getProblemDescription())) {
+            throw new IllegalArgumentException("Problem Description is required");
+        }
+        if (isBlankOrPlaceholder(request.getPriority())) {
+            throw new IllegalArgumentException("Priority is required");
+        }
+        if (isBlankOrPlaceholder(request.getAssemblyid())) {
+            throw new IllegalArgumentException("Assembly / Station is required");
+        }
+        if (isBlankOrPlaceholder(request.getBookedby())) {
+            throw new IllegalArgumentException("Booked By is required");
+        }
+
+        Map<String, Object> hierarchy = breakdownBookingMobileRepo.findEquipmentHierarchy(
+                blankToNull(request.getMachineid()),
+                blankToNull(request.getFlid()));
+
+        if (hierarchy == null || hierarchy.isEmpty()) {
+            throw new ResourceNotFoundException(
+                    "Equipment hierarchy not found in gen_vw_fnln1 for machineid="
+                            + request.getMachineid() + ", flid=" + request.getFlid());
+        }
+
+        String factoryid = requiredHierarchyValue(hierarchy, "factoryid");
+        String sectionid = requiredHierarchyValue(hierarchy, "sectionid");
+        String cellid = placeholderIfBlank(asString(hierarchy.get("cellid")));
+        String machineid = requiredHierarchyValue(hierarchy, "machineid");
+        String elementid = requiredHierarchyValue(hierarchy, "elementid");
+        String flid = requiredHierarchyValue(hierarchy, "flid");
+
+        LocalDateTime occurredOn = parseOccurredOn(request.getOccurredOn());
+        LocalDateTime now = LocalDateTime.now();
+        String bookedby = request.getBookedby().trim();
+        String shiftid = breakdownBookingMobileRepo.findCurrentShiftId(factoryid);
+        if (isBlankOrPlaceholder(shiftid)) {
+            shiftid = EMPTY_PLACEHOLDER;
+        }
+
+        BAL_BdmTlMst master = new BAL_BdmTlMst();
+        master.setKeyid(blankToNull(request.getKeyid()));
+        master.setEntrydate(occurredOn.toLocalDate().atStartOfDay());
+        master.setShiftid(shiftid);
+        master.setFactoryid(factoryid);
+        master.setSectionid(sectionid);
+        master.setCellid(cellid);
+        master.setMachineid(machineid);
+        master.setAssemblyid(request.getAssemblyid().trim());
+        master.setPartlocationid(EMPTY_PLACEHOLDER);
+        master.setAlarmdescription(EMPTY_PLACEHOLDER);
+        master.setBdtype('E');
+        master.setReporteddate(occurredOn);
+        master.setReceiveddate(now);
+        master.setWostarttime(PAST_NULL_DATETIME);
+        master.setWoendtime(FUTURE_NULL_DATETIME);
+        master.setBreaktime(BigDecimal.ZERO);
+        master.setActualworktime(BigDecimal.ZERO);
+        master.setDowntime(BigDecimal.ZERO);
+        master.setProdaccepdate(FUTURE_NULL_DATETIME);
+        master.setBookedphenomena(EMPTY_PLACEHOLDER);
+        master.setPhenomenadescription(EMPTY_PLACEHOLDER);
+        master.setBookedcause(EMPTY_PLACEHOLDER);
+        master.setFinalphenomena(EMPTY_PLACEHOLDER);
+        master.setFinalcause(EMPTY_PLACEHOLDER);
+        master.setBookedtrade(EMPTY_PLACEHOLDER);
+        master.setFinaltrade(EMPTY_PLACEHOLDER);
+        master.setProblemdescription(request.getProblemDescription().trim());
+        master.setIsbdlocked('X');
+        master.setShiftincharge(EMPTY_PLACEHOLDER);
+        master.setStatus('X');
+        master.setBookedby(bookedby);
+        master.setRemarks(EMPTY_PLACEHOLDER);
+        master.setBookingtype("ONL");
+        master.setBdrelatedto("MCH");
+        master.setWno(EMPTY_PLACEHOLDER);
+        master.setSpareid(EMPTY_PLACEHOLDER);
+        master.setPriority(firstChar(request.getPriority(), 'X'));
+        master.setWoallottedflag('N');
+        master.setWostartflag('N');
+        master.setWoendflag('N');
+        master.setWoprodaccepflag('N');
+        master.setSubassemblyid(placeholderIfBlank(request.getSubassemblyid()));
+        master.setRepeatedbdflag("N");
+        master.setRepeatedbdno(EMPTY_PLACEHOLDER);
+        master.setRelatedto("MCH");
+        master.setMould(EMPTY_PLACEHOLDER);
+        master.setElementid(elementid);
+        master.setFlid(flid);
+        master.setProcessid(EMPTY_PLACEHOLDER);
+        master.setIsstandby('N');
+        master.setStandbyequipment(EMPTY_PLACEHOLDER);
+        master.setBreakdowntime(BigDecimal.ZERO);
+        master.setProductionstop('-');
+        master.setImmediateaction(EMPTY_PLACEHOLDER);
+        master.setCompleteddate(FUTURE_NULL_DATETIME);
+        master.setProblemreason("-");
+        master.setActivity('B');
+        master.setOtherphenomena(EMPTY_PLACEHOLDER);
+        master.setTempfield7('-');
+        master.setActive('Y');
+        master.setCreatedby(bookedby);
+        master.setCreatedon(now);
+        master.setModifiedon(now);
+
+        BAL_BdmTlDtl detail = buildBookingStubDetail(bookedby, now);
+
+        BdmDto bdmDto = new BdmDto();
+        bdmDto.setMaster(master);
+        bdmDto.setDetail(detail);
+        bdmDto.setFormMode("MOBILE");
+        bdmDto.setFormActionMode("BOOKING");
+
+        logger.info("Mobile booking save – factoryid={}, sectionid={}, cellid={}, machineid={}, flid={}, elementid={}",
+                factoryid, sectionid, cellid, machineid, flid, elementid);
+
+        return saveBdm(bdmDto);
+    }
+
+    @Override
+    @Transactional
+    public ResponseEntity<BdmDto> saveBreakdownAllocation(BreakdownAllocationMobileDTO request) throws Exception {
+        if (request == null) {
+            throw new IllegalArgumentException("Allocation request is required");
+        }
+        if (isBlankOrPlaceholder(request.getKeyid())) {
+            throw new IllegalArgumentException("BDM keyid is required");
+        }
+        if (isBlankOrPlaceholder(request.getSectionid())) {
+            throw new IllegalArgumentException("Maint. Section / Trade is required");
+        }
+        if (isBlankOrPlaceholder(request.getStartdate())) {
+            throw new IllegalArgumentException("Start date is required");
+        }
+        if (isBlankOrPlaceholder(request.getEnddate())) {
+            throw new IllegalArgumentException("End date is required");
+        }
+
+        String keyid = request.getKeyid().trim();
+        String tradeid = request.getSectionid().trim();
+        LocalDateTime startDate = parseOccurredOn(request.getStartdate());
+        LocalDateTime endDate = parseOccurredOn(request.getEnddate());
+
+        if (endDate.isBefore(startDate)) {
+            throw new IllegalArgumentException("End date/time must be after start date/time");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        BAL_BdmTlMst master = new BAL_BdmTlMst();
+        master.setKeyid(keyid);
+        master.setBookedtrade(tradeid);
+        master.setFinaltrade(tradeid);
+        master.setWostarttime(startDate);
+        master.setWoendtime(endDate);
+        master.setStatus('X');
+        master.setWoallottedflag('Y');
+        master.setWostartflag('N');
+        master.setWoendflag('N');
+        master.setWoprodaccepflag('N');
+        master.setReceiveddate(now);
+        master.setModifiedon(now);
+
+        BAL_BdmTlDtl detail = null;
+        List<BAL_BdmTlDtl> details = detailRepository.findByBdmsKeyidNative(keyid);
+        if (details != null && !details.isEmpty()) {
+            detail = details.get(0);
+            detail.setTradeid(tradeid);
+            detail.setModifiedon(now);
+        }
+
+        BdmDto bdmDto = new BdmDto();
+        bdmDto.setMaster(master);
+        bdmDto.setDetail(detail);
+        bdmDto.setFormMode("MOBILE");
+        bdmDto.setFormActionMode("ALLOCATION");
+
+        logger.info("Mobile allocation save – keyid={}, tradeid={}, start={}, end={}",
+                keyid, tradeid, startDate, endDate);
+
+        return saveBdm(bdmDto);
+    }
+
+    @Override
+    @Transactional
+    public ResponseEntity<BdmDto> saveBreakdownCompletion(BreakdownCompletionMobileDTO request) throws Exception {
+        if (request == null) {
+            throw new IllegalArgumentException("Completion request is required");
+        }
+        if (isBlankOrPlaceholder(request.getKeyid())) {
+            throw new IllegalArgumentException("BDM keyid is required");
+        }
+        if (isBlankOrPlaceholder(request.getCompletedby())) {
+            throw new IllegalArgumentException("Completed By is required");
+        }
+        if (isBlankOrPlaceholder(request.getCompleteddate())) {
+            throw new IllegalArgumentException("Completed date is required");
+        }
+
+        String keyid = request.getKeyid().trim();
+        String completedby = request.getCompletedby().trim();
+        LocalDateTime completedDate = parseOccurredOn(request.getCompleteddate());
+        LocalDateTime now = LocalDateTime.now();
+
+        BAL_BdmTlMst master = new BAL_BdmTlMst();
+        master.setKeyid(keyid);
+        master.setStatus('C');
+        master.setWoendflag('Y');
+        master.setWostartflag('Y');
+        master.setWoprodaccepflag('Y');
+        master.setCompleteddate(completedDate);
+        master.setProdaccepdate(completedDate);
+        master.setModifiedon(now);
+
+        BAL_BdmTlDtl detail = null;
+        List<BAL_BdmTlDtl> details = detailRepository.findByBdmsKeyidNative(keyid);
+        if (details != null && !details.isEmpty()) {
+            detail = details.get(0);
+            detail.setCompletedby(completedby);
+            detail.setModifiedon(now);
+        }
+
+        BdmDto bdmDto = new BdmDto();
+        bdmDto.setMaster(master);
+        bdmDto.setDetail(detail);
+        bdmDto.setFormMode("MOBILE");
+        bdmDto.setFormActionMode("COMPLETION");
+
+        logger.info("Mobile completion save – keyid={}, completedby={}, completeddate={}",
+                keyid, completedby, completedDate);
+
+        return saveBdm(bdmDto);
+    }
+
+    private BAL_BdmTlDtl buildBookingStubDetail(String bookedby, LocalDateTime now) {
+        BAL_BdmTlDtl detail = new BAL_BdmTlDtl();
+        detail.setFinalphenomena(EMPTY_PLACEHOLDER);
+        detail.setFinalcause(EMPTY_PLACEHOLDER);
+        detail.setFinalaction(EMPTY_PLACEHOLDER);
+        detail.setTradeid(EMPTY_PLACEHOLDER);
+        detail.setCountermeasure(EMPTY_PLACEHOLDER);
+        detail.setWwrequired('N');
+        detail.setWwno(EMPTY_PLACEHOLDER);
+        detail.setRootcause(EMPTY_PLACEHOLDER);
+        detail.setPreventivemeasure(EMPTY_PLACEHOLDER);
+        detail.setRootcauseid(EMPTY_PLACEHOLDER);
+        detail.setCountermeasureid(EMPTY_PLACEHOLDER);
+        detail.setPreventivemeasureid(EMPTY_PLACEHOLDER);
+        detail.setBreakdowntime(BigDecimal.ZERO);
+        detail.setWorktime(BigDecimal.ZERO);
+        detail.setClassificationid(EMPTY_PLACEHOLDER);
+        detail.setCategoryid(EMPTY_PLACEHOLDER);
+        detail.setIssparesreplaced('N');
+        detail.setAlarmno(EMPTY_PLACEHOLDER);
+        detail.setManpowercost(BigDecimal.ZERO);
+        detail.setContractorcost(BigDecimal.ZERO);
+        detail.setSparescost(BigDecimal.ZERO);
+        detail.setOthercost(BigDecimal.ZERO);
+        detail.setStatus('X');
+        detail.setRemarks(EMPTY_PLACEHOLDER);
+        detail.setActiontakenby(EMPTY_PLACEHOLDER);
+        detail.setCompletedby(EMPTY_PLACEHOLDER);
+        detail.setCostcentre(EMPTY_PLACEHOLDER);
+        detail.setErppoststatus('X');
+        detail.setProblemseverity("N");
+        detail.setFailuretype(EMPTY_PLACEHOLDER);
+        detail.setIsapproved('X');
+        detail.setApproverdby(EMPTY_PLACEHOLDER);
+        detail.setErpnumber("0");
+        detail.setOtherfailuretype(EMPTY_PLACEHOLDER);
+        detail.setActive('Y');
+        detail.setCreatedby(bookedby);
+        detail.setCreatedon(now);
+        detail.setModifiedon(now);
+        return detail;
+    }
+
+    private String requiredHierarchyValue(Map<String, Object> hierarchy, String column) {
+        String value = asString(hierarchy.get(column));
+        if (isBlankOrPlaceholder(value)) {
+            throw new ResourceNotFoundException(
+                    "Equipment hierarchy is missing " + column + " in gen_vw_fnln1");
+        }
+        return value;
+    }
+
+    private String asString(Object value) {
+        return value == null ? null : value.toString().trim();
+    }
+
+    private String blankToNull(String value) {
+        return isBlankOrPlaceholder(value) ? null : value.trim();
+    }
+
+    private String placeholderIfBlank(String value) {
+        return isBlankOrPlaceholder(value) ? EMPTY_PLACEHOLDER : value.trim();
+    }
+
+    private Character firstChar(String value, char fallback) {
+        if (isBlankOrPlaceholder(value)) {
+            return fallback;
+        }
+        return value.trim().charAt(0);
+    }
+
+    private LocalDateTime parseOccurredOn(String occurredOn) {
+        if (isBlankOrPlaceholder(occurredOn)) {
+            return LocalDateTime.now();
+        }
+        String value = occurredOn.trim();
+        DateTimeFormatter[] formatters = new DateTimeFormatter[] {
+                DateTimeFormatter.ISO_LOCAL_DATE_TIME,
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
+        };
+        for (DateTimeFormatter formatter : formatters) {
+            try {
+                return LocalDateTime.parse(value, formatter);
+            } catch (DateTimeParseException ignored) {
+                // try next pattern
+            }
+        }
+        try {
+            return LocalDate.parse(value, DateTimeFormatter.ISO_LOCAL_DATE).atStartOfDay();
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid occurredOn date: " + occurredOn);
         }
     }
 
@@ -273,59 +626,11 @@ private final wom_tl_communicationlogRepository communicationRepository;
             );
             logger.info("Inserted MACHINECALTIME for master: {}", masterKeyid);
         }
-        // added by priyanka on 18/09/2026
-        saveMultipleResponsibility(savedMaster.getKeyid(), request.getBdmMultiResp());
-
-        // end 
 
         // ── 6. Build and return response ─────────────────────────────────────
         BdmDto result = buildResponse(savedMaster, savedDetail, savedWom, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
-
-     // added by priyanka on 18/09/2026
-
-    private void saveMultipleResponsibility(String bdmsKeyid, List<BAL_BdmTlMultipleResp> bdmMultiResp) throws Exception {
-
-    if (bdmMultiResp == null || bdmMultiResp.isEmpty()) {
-        return;
-    }
-
-    // Clear existing multiple-responsibility records only if some already exist for this master
-    // if (bdmsKeyid != null && !bdmsKeyid.trim().isEmpty() && multiRespRepo.existsByRefid(bdmsKeyid)) {
-    //     multiRespRepo.deleteByRefid(bdmsKeyid);
-    // }  
-
-    if (bdmsKeyid != null && !bdmsKeyid.trim().isEmpty()) {
-        int deletedCount = multiRespRepo.deleteByRefid(bdmsKeyid);
-        logger.info("Deleted {} existing multi-resp rows for refid={}", deletedCount, bdmsKeyid);
-    }
-
-    for (BAL_BdmTlMultipleResp resp : bdmMultiResp) {
-
-        if (resp.getRespEmpid() == null || resp.getRespEmpid().trim().isEmpty()) {
-            throw new RuntimeException("bdrs_resp_empid is required for each responsibility entry");
-        }
-
-        resp.setRefid(bdmsKeyid);
-        resp.setKeyid(dbActionTemplate.getSequenceNumber(
-                SEQ_MULTI_RESP,
-                10,
-                "BDR",
-                DATE_FORMAT,
-                FORMAT_RESET));
-
-        if (resp.getActive() == null) {
-            resp.setActive('Y');
-        }
-        if (resp.getTempfield() == null) {
-            resp.setTempfield('-');
-        }
-
-        multiRespRepo.save(resp);   
-    }
-    }
-    // end
 
     // =========================================================================
  // =========================================================================
@@ -418,36 +723,14 @@ private final wom_tl_communicationlogRepository communicationRepository;
                 savedDetail = detailRepository.save(detail);
                 logger.info("Inserted new BDM Detail during update: {}", detailKeyid);
 
+            } else {
+                // Update existing detail
+                detail.setBdms_keyid(masterKeyid);
+                detail.setModifiedon(LocalDateTime.now());
+                savedDetail = detailRepository.save(detail);
+                logger.info("Updated BDM Detail: {}", detail.getKeyid());
             }
-            // commented and added by priyanka on 18/09/2026
-            // else {
-            //     // Update existing detail
-            //     detail.setBdms_keyid(masterKeyid);
-            //     detail.setModifiedon(LocalDateTime.now());
-            //     savedDetail = detailRepository.save(detail);
-            //     logger.info("Updated BDM Detail: {}", detail.getKeyid());
-            // }
-
-
-            else {
-                // Update existing detail – load managed entity, merge only non-null incoming fields
-                BAL_BdmTlDtl existingDetail = detailRepository.findById(detail.getKeyid())
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                        "BDM Detail not found for keyid: " + detail.getKeyid()));
-
-                mergeDetail(existingDetail, detail);
-                existingDetail.setBdms_keyid(masterKeyid);
-                existingDetail.setModifiedon(LocalDateTime.now());
-
-                savedDetail = detailRepository.save(existingDetail);
-                logger.info("Updated BDM Detail: {}", existingDetail.getKeyid());
-            }
-            // end
         }
-        // added by priyanka on 18/09/2026
-        // ── 4a. Save/replace multiple responsibility entries ─────────────────
-        saveMultipleResponsibility(savedMaster.getKeyid(), request.getBdmMultiResp()); 
-        // end
 
         // ── 5. Build and return response ─────────────────────────────────────
         BdmDto result = buildResponse(savedMaster, savedDetail, savedWom, request);
@@ -808,48 +1091,6 @@ private final wom_tl_communicationlogRepository communicationRepository;
         if (incoming.getTempfield7()           != null) existing.setTempfield7(incoming.getTempfield7());
         if (incoming.getActive()               != null) existing.setActive(incoming.getActive());
     }
-    // added here by priyanka on 18/09/2026
-    // =========================================================================
-//  HELPER : Merge incoming detail fields onto existing entity (null-safe)
-// =========================================================================
-private void mergeDetail(BAL_BdmTlDtl existing, BAL_BdmTlDtl incoming) {
-    if (incoming.getFinalphenomena()      != null) existing.setFinalphenomena(incoming.getFinalphenomena());
-    if (incoming.getFinalcause()          != null) existing.setFinalcause(incoming.getFinalcause());
-    if (incoming.getFinalaction()         != null) existing.setFinalaction(incoming.getFinalaction());
-    if (incoming.getTradeid()             != null) existing.setTradeid(incoming.getTradeid());
-    if (incoming.getCountermeasure()      != null) existing.setCountermeasure(incoming.getCountermeasure());
-    if (incoming.getWwrequired()          != null) existing.setWwrequired(incoming.getWwrequired());
-    if (incoming.getWwno()                != null) existing.setWwno(incoming.getWwno());
-    if (incoming.getRootcause()           != null) existing.setRootcause(incoming.getRootcause());
-    if (incoming.getPreventivemeasure()   != null) existing.setPreventivemeasure(incoming.getPreventivemeasure());
-    if (incoming.getRootcauseid()         != null) existing.setRootcauseid(incoming.getRootcauseid());
-    if (incoming.getCountermeasureid()    != null) existing.setCountermeasureid(incoming.getCountermeasureid());
-    if (incoming.getPreventivemeasureid() != null) existing.setPreventivemeasureid(incoming.getPreventivemeasureid());
-    if (incoming.getBreakdowntime()       != null) existing.setBreakdowntime(incoming.getBreakdowntime());
-    if (incoming.getWorktime()            != null) existing.setWorktime(incoming.getWorktime());
-    if (incoming.getClassificationid()    != null) existing.setClassificationid(incoming.getClassificationid());
-    if (incoming.getCategoryid()          != null) existing.setCategoryid(incoming.getCategoryid());
-    if (incoming.getIssparesreplaced()    != null) existing.setIssparesreplaced(incoming.getIssparesreplaced());
-    if (incoming.getAlarmno()             != null) existing.setAlarmno(incoming.getAlarmno());
-    if (incoming.getManpowercost()        != null) existing.setManpowercost(incoming.getManpowercost());
-    if (incoming.getContractorcost()      != null) existing.setContractorcost(incoming.getContractorcost());
-    if (incoming.getSparescost()          != null) existing.setSparescost(incoming.getSparescost());
-    if (incoming.getOthercost()           != null) existing.setOthercost(incoming.getOthercost());
-    if (incoming.getStatus()              != null) existing.setStatus(incoming.getStatus());
-    if (incoming.getRemarks()             != null) existing.setRemarks(incoming.getRemarks());
-    if (incoming.getActiontakenby()       != null) existing.setActiontakenby(incoming.getActiontakenby());
-    if (incoming.getCompletedby()         != null) existing.setCompletedby(incoming.getCompletedby());
-    if (incoming.getCostcentre()          != null) existing.setCostcentre(incoming.getCostcentre());
-    if (incoming.getErppoststatus()       != null) existing.setErppoststatus(incoming.getErppoststatus());
-    if (incoming.getProblemseverity()     != null) existing.setProblemseverity(incoming.getProblemseverity());
-    if (incoming.getFailuretype()         != null) existing.setFailuretype(incoming.getFailuretype());
-    if (incoming.getIsapproved()          != null) existing.setIsapproved(incoming.getIsapproved());
-    if (incoming.getApproverdby()         != null) existing.setApproverdby(incoming.getApproverdby());
-    if (incoming.getErpnumber()           != null) existing.setErpnumber(incoming.getErpnumber());
-    if (incoming.getOtherfailuretype()    != null) existing.setOtherfailuretype(incoming.getOtherfailuretype());
-    if (incoming.getActive()              != null) existing.setActive(incoming.getActive());
-}
-// end 
 
     // =========================================================================
     //  HELPER : Merge updated BDM master fields back into existing WOM entity
@@ -883,6 +1124,35 @@ private void mergeDetail(BAL_BdmTlDtl existing, BAL_BdmTlDtl incoming) {
         existingWom.setProcessid(savedMaster.getProcessid());
         existingWom.setProductionstop(savedMaster.getProductionstop());
         existingWom.setRelatedto(savedMaster.getBdrelatedto());
+
+        if (savedMaster.getWoallottedflag() != null) {
+            existingWom.setAllottedflag(savedMaster.getWoallottedflag());
+        }
+        if (savedMaster.getWoallottedflag() != null && savedMaster.getWoallottedflag() == 'Y') {
+            if (savedMaster.getBookedby() != null && !isBlankOrPlaceholder(savedMaster.getBookedby())) {
+                existingWom.setAllottedto(savedMaster.getBookedby());
+            }
+            existingWom.setAllotteddate(LocalDate.now());
+            existingWom.setProposedstflag('Y');
+            existingWom.setProposedendflag('Y');
+            if (savedMaster.getWostarttime() != null) {
+                existingWom.setProposedstartdate(savedMaster.getWostarttime().toLocalDate());
+            }
+            if (savedMaster.getWoendtime() != null) {
+                existingWom.setProposedenddate(savedMaster.getWoendtime().toLocalDate());
+            }
+        }
+        if (savedMaster.getWoendflag() != null && savedMaster.getWoendflag() == 'Y') {
+            existingWom.setStatus('C');
+            existingWom.setFinalstatus("COMPLETED");
+            existingWom.setWorkendflag('Y');
+            if (savedMaster.getCompleteddate() != null) {
+                existingWom.setWorkenddate(savedMaster.getCompleteddate().toLocalDate());
+            } else if (savedMaster.getWoendtime() != null) {
+                existingWom.setWorkenddate(savedMaster.getWoendtime().toLocalDate());
+            }
+            existingWom.setWoapprovalflag('Y');
+        }
     }
 
     // =========================================================================

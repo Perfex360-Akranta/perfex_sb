@@ -72,6 +72,30 @@ private String mouldId;
 private String othersFlag;
 //private String pillarCode;
 
+//Breakdown 
+private String assemblyKeyId;
+
+//gendralmaint
+private String atTime;
+
+
+public String getAtTime() {
+    return atTime;
+}
+public void setAtTime(String atTime) {
+    this.atTime = atTime;
+}
+
+
+//breakdown
+public String getAssemblyKeyId() {
+    return assemblyKeyId;
+}
+public void setAssemblyKeyId(String assemblyKeyId) {
+    this.assemblyKeyId = assemblyKeyId;
+}
+
+
 
   public String getOthersFlag() {
     return othersFlag;

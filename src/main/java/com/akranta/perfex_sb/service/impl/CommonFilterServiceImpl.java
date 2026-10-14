@@ -1,4 +1,5 @@
 package com.akranta.perfex_sb.service.impl;
+
 import java.util.Comparator;
 
 import java.util.Map;
@@ -27,10 +28,8 @@ import com.akranta.perfex_sb.util.ValidationUtil;
 import com.akranta.perfex_sb.repository.GenTlSectionmstRepository;
 import com.akranta.perfex_sb.repository.AdmTlConfigurationmstRepository;
 
-
 @Service
-public class CommonFilterServiceImpl implements CommonFilterService 
-{
+public class CommonFilterServiceImpl implements CommonFilterService {
     @Autowired
     private CommonFilterRepository repository;
     @Autowired
@@ -40,251 +39,219 @@ public class CommonFilterServiceImpl implements CommonFilterService
     private AdmTlConfigurationmstRepository configurationmstRepository;
 
     @Autowired
-    private JdbcTemplate jdbcTemplate; 
+    private JdbcTemplate jdbcTemplate;
 
     private static final Logger logger = LoggerFactory.getLogger(CommonFilterServiceImpl.class);
 
-    
-
     @Override
-    public List<DropDownDto> getEmployeeComboList(CommonFilterDto commonFilterDto) 
-    {
-        ComboFilterDto comboFilter = new ComboFilterDto();
-                List<Object> params = new ArrayList<>();
-
-                /*
-                 * Employee dropdown configuration
-                 */
-
-                comboFilter.setTableName("GEN_TL_EMPLOYEEMST E");
-
-                comboFilter.setIdField("E.EMPM_KEYID");
-
-                comboFilter.setNameField("TRIM(E.EMPM_NAME)");
-
-                comboFilter.setCodeField("TRIM(E.EMPM_CODE)");
-
-                comboFilter.setOrderByField("LABEL");
-
-                /*
-                 * Base employee condition
-                 */
-
-                comboFilter.setCondSql("""
-                                        AND E.EMPM_ACTIVE = 'Y'
-                                """);
-
-                //logger.info("Cell Id {} ",commonFilterDto.getCellId());
-                if(commonFilterDto != null)
-                    {
-
-                if ((ValidationUtil.isValidKeyId(commonFilterDto.getCellId())) && "N".equals(commonFilterDto.getAbnmOthers()) ) 
-                {
-
-                        comboFilter.setCondSql("""
-                                        AND E.EMPM_KEYID IN (
-                                                SELECT DISTINCT EMPM_KEYID
-                                                FROM
-                                                   GEN_TL_EMPLOYEEMST,
-                                                   GEN_TL_FNLNROLETEAM
-                                                   WHERE FRT_EMPM_KEYID = EMPM_KEYID
-                                                AND
-                                                FRT_FNLN_KEYID IN (
-                                                                SELECT FLID
-                                                                FROM GEN_MV_FLIDHIERARCHY
-                                                                WHERE FNLN_ORIGINALID = ?
-                                                        )
-                                                )
-                                        """);
-                        params.add(commonFilterDto.getCellId());
-                }
-                        
-                else if ((ValidationUtil.isValidKeyId(commonFilterDto.getCellId()) ) &&  "Y".equals(commonFilterDto.getAbnmOthers()))
-                {
-                        comboFilter.setCondSql("""
-                                        AND E.EMPM_KEYID IN (
-                                                SELECT DISTINCT EMPM_KEYID
-                                                FROM
-                                                   GEN_TL_EMPLOYEEMST,
-                                                   GEN_TL_FNLNROLETEAM
-                                                   WHERE FRT_EMPM_KEYID = EMPM_KEYID
-                                                AND
-                                                FRT_FNLN_KEYID IN (
-                                                                SELECT FLID
-                                                                FROM GEN_MV_FLIDHIERARCHY
-                                                                WHERE FNLN_ORIGINALID <> ?
-                                                        )
-                                                )
-                                        """);
-                        // comboFilter.getSqlParams().put("cellId",commonFilterDto.getCellId()
-                        params.add(commonFilterDto.getCellId());
-                                    }            
-
-                }       
-
-        //logger.info("Cell Id = " + commonFilterDto.getCellId());
-        //logger.info("Params = " + params);
-        //logger.info("Params Array = " + java.util.Arrays.toString(params.toArray()));   
-
-        return repository.fillComboValues(comboFilter,params.toArray());
-        
-    }
-
-
-
-    @Override
-    public List<DropDownDto> getTAbnTagClassCombo(CommonFilterDto commonFilterDto)
-     {
+    public List<DropDownDto> getEmployeeComboList(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
-        
+
+        /*
+         * Employee dropdown configuration
+         */
+
+        comboFilter.setTableName("GEN_TL_EMPLOYEEMST E");
+
+        comboFilter.setIdField("E.EMPM_KEYID");
+
+        comboFilter.setNameField("TRIM(E.EMPM_NAME)");
+
+        comboFilter.setCodeField("TRIM(E.EMPM_CODE)");
+
+        comboFilter.setOrderByField("LABEL");
+
+        /*
+         * Base employee condition
+         */
+
+        comboFilter.setCondSql("""
+                        AND E.EMPM_ACTIVE = 'Y'
+                """);
+
+        // logger.info("Cell Id {} ",commonFilterDto.getCellId());
+        if (commonFilterDto != null) {
+
+            if ((ValidationUtil.isValidKeyId(commonFilterDto.getCellId()))
+                    && "N".equals(commonFilterDto.getAbnmOthers())) {
+
+                comboFilter.setCondSql("""
+                        AND E.EMPM_KEYID IN (
+                                SELECT DISTINCT EMPM_KEYID
+                                FROM
+                                   GEN_TL_EMPLOYEEMST,
+                                   GEN_TL_FNLNROLETEAM
+                                   WHERE FRT_EMPM_KEYID = EMPM_KEYID
+                                AND
+                                FRT_FNLN_KEYID IN (
+                                                SELECT FLID
+                                                FROM GEN_MV_FLIDHIERARCHY
+                                                WHERE FNLN_ORIGINALID = ?
+                                        )
+                                )
+                        """);
+                params.add(commonFilterDto.getCellId());
+            }
+
+            else if ((ValidationUtil.isValidKeyId(commonFilterDto.getCellId()))
+                    && "Y".equals(commonFilterDto.getAbnmOthers())) {
+                comboFilter.setCondSql("""
+                        AND E.EMPM_KEYID IN (
+                                SELECT DISTINCT EMPM_KEYID
+                                FROM
+                                   GEN_TL_EMPLOYEEMST,
+                                   GEN_TL_FNLNROLETEAM
+                                   WHERE FRT_EMPM_KEYID = EMPM_KEYID
+                                AND
+                                FRT_FNLN_KEYID IN (
+                                                SELECT FLID
+                                                FROM GEN_MV_FLIDHIERARCHY
+                                                WHERE FNLN_ORIGINALID <> ?
+                                        )
+                                )
+                        """);
+                // comboFilter.getSqlParams().put("cellId",commonFilterDto.getCellId()
+                params.add(commonFilterDto.getCellId());
+            }
+
+        }
+
+        // logger.info("Cell Id = " + commonFilterDto.getCellId());
+        // logger.info("Params = " + params);
+        // logger.info("Params Array = " + java.util.Arrays.toString(params.toArray()));
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+
+    }
+
+    @Override
+    public List<DropDownDto> getTAbnTagClassCombo(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
         comboFilter.setTableName("ABN_TL_TAGMST");
         comboFilter.setIdField("TAGM_KEYID");
         comboFilter.setNameField("TRIM(TAGM_NAME)");
         comboFilter.setCodeField("TRIM(TAGM_CODE)");
         comboFilter.setOrderByField("LABEL");
-        
-        
+
         comboFilter.setCondSql("""
-                                AND TAGM_ACTIVE = 'Y'
-                             """);
-        
-        return repository.fillComboValues(comboFilter,params.toArray());
+                   AND TAGM_ACTIVE = 'Y'
+                """);
+
+        return repository.fillComboValues(comboFilter, params.toArray());
     }
 
-
-     @Override
-    public List<DropDownDto> getAbnTypeCombo(CommonFilterDto commonFilterDto)
-     {
+    @Override
+    public List<DropDownDto> getAbnTypeCombo(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
-        
+
         comboFilter.setTableName("ABN_TL_TYPEMST");
         comboFilter.setIdField("ABTM_KEYID");
         comboFilter.setNameField("TRIM(ABTM_NAME)");
         comboFilter.setCodeField("TRIM(ABTM_CODE)");
         comboFilter.setOrderByField("LABEL");
-        
-        
+
         comboFilter.setCondSql("""
-                                AND ABTM_ACTIVE = 'Y'
-                             """);
-        
-        return repository.fillComboValues(comboFilter,params.toArray());
+                   AND ABTM_ACTIVE = 'Y'
+                """);
+
+        return repository.fillComboValues(comboFilter, params.toArray());
     }
 
-
-
-     @Override
-     public List<DropDownDto> getAbnSubTypecombo(CommonFilterDto commonFilterDto) 
-     {
-         ComboFilterDto comboFilter = new ComboFilterDto();
+    @Override
+    public List<DropDownDto> getAbnSubTypecombo(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
-        
+
         comboFilter.setTableName("ABN_TL_HTASOCMST");
         comboFilter.setIdField("AHSM_KEYID");
         comboFilter.setNameField("TRIM(AHSM_NAME)");
         comboFilter.setCodeField("TRIM(AHSM_CODE)");
         comboFilter.setOrderByField("LABEL");
-        
-        
+
         comboFilter.setCondSql("""
-                                AND AHSM_ACTIVE = 'Y'
-                             """);
-        
-        if(commonFilterDto != null && ValidationUtil.isValidKeyId(commonFilterDto.getAbnormalityTypeId()))
-        {
-                comboFilter.setCondSql("""
-                                AND AHSM_ABNORMALITYTYPE = ?
-                             """);
-                params.add(commonFilterDto.getAbnormalityTypeId());
+                   AND AHSM_ACTIVE = 'Y'
+                """);
+
+        if (commonFilterDto != null && ValidationUtil.isValidKeyId(commonFilterDto.getAbnormalityTypeId())) {
+            comboFilter.setCondSql("""
+                       AND AHSM_ABNORMALITYTYPE = ?
+                    """);
+            params.add(commonFilterDto.getAbnormalityTypeId());
         }
-        
-        return repository.fillComboValues(comboFilter,params.toArray());
-        
-     }
 
+        return repository.fillComboValues(comboFilter, params.toArray());
 
+    }
 
-     @Override
-     public List<DropDownDto> getAbnImpactcombo(CommonFilterDto commonFilterDto) 
-     {
+    @Override
+    public List<DropDownDto> getAbnImpactcombo(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
-        
+
         comboFilter.setTableName("ABN_TL_IMPACTMST");
         comboFilter.setIdField("ABIM_KEYID");
         comboFilter.setNameField("TRIM(ABIM_NAME)");
         comboFilter.setCodeField("TRIM(ABIM_CODE)");
         comboFilter.setOrderByField("LABEL");
 
-
-        if(commonFilterDto!= null && ValidationUtil.isValidKeyId(commonFilterDto.getComboKey()))
-         {
+        if (commonFilterDto != null && ValidationUtil.isValidKeyId(commonFilterDto.getComboKey())) {
             comboFilter.setId(commonFilterDto.getComboKey());
-         }
-        
-       
-        
+        }
+
         comboFilter.setCondSql("""
-                                AND ABIM_ACTIVE = 'Y'
-                             """);
+                   AND ABIM_ACTIVE = 'Y'
+                """);
 
-         logger.info("Running comboValue Key");
-        
-        return repository.fillComboValues(comboFilter,params.toArray());
-       
-     }
+        logger.info("Running comboValue Key");
 
+        return repository.fillComboValues(comboFilter, params.toArray());
 
+    }
 
-     @Override
-     public List<DropDownDto> getAbnCategorycombo(CommonFilterDto commonFilterDto) 
-     {
+    @Override
+    public List<DropDownDto> getAbnCategorycombo(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
-        
+
         comboFilter.setTableName("ABN_TL_CATEGORYMST");
         comboFilter.setIdField("ABCM_KEYID");
         comboFilter.setNameField("TRIM(ABCM_NAME)");
         comboFilter.setCodeField("TRIM(ABCM_CODE)");
         comboFilter.setOrderByField("LABEL");
-        
-        
+
         comboFilter.setCondSql("""
-                                AND ABCM_ACTIVE = 'Y'
-                             """);
-        
-        return repository.fillComboValues(comboFilter,params.toArray());
+                   AND ABCM_ACTIVE = 'Y'
+                """);
 
-      
-     }
+        return repository.fillComboValues(comboFilter, params.toArray());
 
+    }
 
-
-     @Override
-     public List<DropDownDto> getAbnTradecombo(CommonFilterDto commonFilterDto) 
-     {
+    @Override
+    public List<DropDownDto> getAbnTradecombo(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
-        
+
         comboFilter.setTableName("GEN_TL_TRADEMST");
         comboFilter.setIdField("TRDM_KEYID");
         comboFilter.setNameField("TRIM(TRDM_NAME)");
         comboFilter.setCodeField("TRIM(TRDM_CODE)");
         comboFilter.setOrderByField("LABEL");
-        
-        
+
         comboFilter.setCondSql("""
-                                AND TRDM_ACTIVE = 'Y'
-                             """);
-        
-        return repository.fillComboValues(comboFilter,params.toArray());
-        
-     }
-     @Override
-     public List<DropDownDto> getcombo_ccno(CommonFilterDto commonFilterDto)
-     {
+                   AND TRDM_ACTIVE = 'Y'
+                """);
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+
+    }
+
+    @Override
+    public List<DropDownDto> getcombo_ccno(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -311,11 +278,10 @@ public class CommonFilterServiceImpl implements CommonFilterService
         comboFilter.setCondSql(condSql.toString());
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
-     
-@Override
-     public List<DropDownDto> getProfidComboList(CommonFilterDto commonFilterDto)
-     {
+    }
+
+    @Override
+    public List<DropDownDto> getProfidComboList(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -325,16 +291,14 @@ public class CommonFilterServiceImpl implements CommonFilterService
         comboFilter.setCodeField("LGFR_CREATEDDATE");
 
         comboFilter.setCondSql("""
-                                AND LGFR_ACTIVE = 'Y'
-                             """);
+                   AND LGFR_ACTIVE = 'Y'
+                """);
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
+    }
 
-
-     @Override
-     public List<DropDownDto> getDepartmentComboList(CommonFilterDto commonFilterDto)
-     {
+    @Override
+    public List<DropDownDto> getDepartmentComboList(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -345,10 +309,10 @@ public class CommonFilterServiceImpl implements CommonFilterService
         comboFilter.setOrderByField("LABEL");
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
-     @Override
-     public List<DropDownDto> getDesignationComboList(CommonFilterDto commonFilterDto)
-     {
+    }
+
+    @Override
+    public List<DropDownDto> getDesignationComboList(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -359,28 +323,28 @@ public class CommonFilterServiceImpl implements CommonFilterService
         comboFilter.setOrderByField("LABEL");
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
+    }
 
-   //   @Override
-   //   public List<DropDownDto> getRoleComboList(CommonFilterDto commonFilterDto)
-   //   {
-   //      ComboFilterDto comboFilter = new ComboFilterDto();
-   //      List<Object> params = new ArrayList<>();
+    // @Override
+    // public List<DropDownDto> getRoleComboList(CommonFilterDto commonFilterDto)
+    // {
+    // ComboFilterDto comboFilter = new ComboFilterDto();
+    // List<Object> params = new ArrayList<>();
 
-   //      comboFilter.setTableName("ADM_TL_ROLEMST");
-   //      comboFilter.setIdField("ROLE_KEYID");
-   //      comboFilter.setNameField("TRIM(ROLE_NAME)");
-   //      comboFilter.setCodeField("TRIM(ROLE_CODE)");
-   //      comboFilter.setOrderByField("LABEL");
+    // comboFilter.setTableName("ADM_TL_ROLEMST");
+    // comboFilter.setIdField("ROLE_KEYID");
+    // comboFilter.setNameField("TRIM(ROLE_NAME)");
+    // comboFilter.setCodeField("TRIM(ROLE_CODE)");
+    // comboFilter.setOrderByField("LABEL");
 
-   //      logger.info("flid => {}", commonFilterDto != null ? commonFilterDto.getFlId() : null);
+    // logger.info("flid => {}", commonFilterDto != null ? commonFilterDto.getFlId()
+    // : null);
 
-   //      return repository.fillComboValues(comboFilter, params.toArray());
-   //   }
+    // return repository.fillComboValues(comboFilter, params.toArray());
+    // }
 
-@Override
-     public List<DropDownDto> getLopcCategoryCombo(CommonFilterDto commonFilterDto)
-     {
+    @Override
+    public List<DropDownDto> getLopcCategoryCombo(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -390,10 +354,10 @@ public class CommonFilterServiceImpl implements CommonFilterService
         comboFilter.setOrderByField("LABEL");
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
-  @Override
-     public List<DropDownDto> getUomComboList(CommonFilterDto commonFilterDto)
-     {
+    }
+
+    @Override
+    public List<DropDownDto> getUomComboList(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -405,11 +369,10 @@ public class CommonFilterServiceImpl implements CommonFilterService
         comboFilter.setOrderByField("LABEL");
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     } 
-      
-     @Override
-     public List<DropDownDto> getShiftComboList(CommonFilterDto commonFilterDto)
-     {
+    }
+
+    @Override
+    public List<DropDownDto> getShiftComboList(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -441,10 +404,10 @@ public class CommonFilterServiceImpl implements CommonFilterService
         comboFilter.setTableName("GEN_TL_SHIFTMST");
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
+    }
+
     @Override
-     public List<DropDownDto> getActionPlanEmployeeComboList(CommonFilterDto commonFilterDto)
-     {
+    public List<DropDownDto> getActionPlanEmployeeComboList(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -486,7 +449,8 @@ public class CommonFilterServiceImpl implements CommonFilterService
             sub.append(" WHERE EMPM_ACTIVE = 'Y' ");
 
             if ("Y".equals(others)) {
-                sub.append(" AND POSITION((SELECT FNLN_KEYID FROM gen_tl_functionallocn WHERE FNLN_ORIGINALID = ?) IN (parentflids || flid)) > 0 ");
+                sub.append(
+                        " AND POSITION((SELECT FNLN_KEYID FROM gen_tl_functionallocn WHERE FNLN_ORIGINALID = ?) IN (parentflids || flid)) > 0 ");
                 params.add(locationId);
             } else {
                 sub.append(" AND POSITION(? IN (parentflids || flid)) > 0 ");
@@ -521,7 +485,8 @@ public class CommonFilterServiceImpl implements CommonFilterService
             sub.append(" WHERE 1=1 ");
 
             if ("Y".equals(others)) {
-                sub.append(" AND POSITION((SELECT FNLN_KEYID FROM gen_tl_functionallocn WHERE FNLN_ORIGINALID = ?) IN (parentflids || flid)) > 0 ");
+                sub.append(
+                        " AND POSITION((SELECT FNLN_KEYID FROM gen_tl_functionallocn WHERE FNLN_ORIGINALID = ?) IN (parentflids || flid)) > 0 ");
                 params.add(locationId);
             } else if ("Others".equals(type)) {
                 sub.append(" AND flid = ? ");
@@ -532,10 +497,12 @@ public class CommonFilterServiceImpl implements CommonFilterService
             }
 
             if (!"Others".equals(type) && !"Dmt".equals(type) && !"JH".equals(type) && !"Pillar".equals(type)) {
-                sub.append(" AND ROLE_KEYID IN (SELECT MRMP_ROLE_KEYID FROM GEN_TL_MEETINGTYPE_ROLE_MAP WHERE MRMP_MEETING_TYPE = UPPER(?) AND EMPM_ACTIVE = 'Y' AND MRMP_PILLAR_ID = '-') ");
+                sub.append(
+                        " AND ROLE_KEYID IN (SELECT MRMP_ROLE_KEYID FROM GEN_TL_MEETINGTYPE_ROLE_MAP WHERE MRMP_MEETING_TYPE = UPPER(?) AND EMPM_ACTIVE = 'Y' AND MRMP_PILLAR_ID = '-') ");
                 params.add(type);
             } else if ("Pillar".equals(type)) {
-                sub.append(" AND ROLE_KEYID IN (SELECT MRMP_ROLE_KEYID FROM GEN_TL_MEETINGTYPE_ROLE_MAP WHERE MRMP_MEETING_TYPE = UPPER(?) AND EMPM_ACTIVE = 'Y' AND MRMP_PILLAR_ID = ?) ");
+                sub.append(
+                        " AND ROLE_KEYID IN (SELECT MRMP_ROLE_KEYID FROM GEN_TL_MEETINGTYPE_ROLE_MAP WHERE MRMP_MEETING_TYPE = UPPER(?) AND EMPM_ACTIVE = 'Y' AND MRMP_PILLAR_ID = ?) ");
                 params.add(type);
                 params.add(pillarid);
             }
@@ -568,7 +535,8 @@ public class CommonFilterServiceImpl implements CommonFilterService
             sub.append(" WHERE 1=1 ");
 
             if ("Y".equals(others)) {
-                sub.append(" AND POSITION((SELECT FNLN_KEYID FROM gen_tl_functionallocn WHERE FNLN_ORIGINALID = ?) IN (parentflids || flid)) > 0 ");
+                sub.append(
+                        " AND POSITION((SELECT FNLN_KEYID FROM gen_tl_functionallocn WHERE FNLN_ORIGINALID = ?) IN (parentflids || flid)) > 0 ");
                 params.add(locationId);
             } else {
                 sub.append(" AND POSITION(? IN (parentflids || flid)) > 0 ");
@@ -587,11 +555,13 @@ public class CommonFilterServiceImpl implements CommonFilterService
         if (ValidationUtil.isValidKeyId(rtal) && !"empFilter".equals(rtal)) {
             String[] rtlRole = rtal.split(",");
             if (rtlRole.length > 1 && ValidationUtil.isValidKeyId(rtlRole[1])) {
-                condSql.append(" AND E.EMPM_ROLEID = ? AND E.EMPM_KEYID NOT IN (SELECT EREL_EMPM_KEYID FROM ENT_TL_ROLE_EMP_LINK WHERE EREL_RTAL_KEYID = ?) ");
+                condSql.append(
+                        " AND E.EMPM_ROLEID = ? AND E.EMPM_KEYID NOT IN (SELECT EREL_EMPM_KEYID FROM ENT_TL_ROLE_EMP_LINK WHERE EREL_RTAL_KEYID = ?) ");
                 params.add(rtlRole[1]);
                 params.add(rtlRole[0]);
             } else {
-                condSql.append(" AND E.EMPM_KEYID NOT IN (SELECT EREL_EMPM_KEYID FROM ENT_TL_ROLE_EMP_LINK WHERE EREL_ACTIVE = 'Y') ");
+                condSql.append(
+                        " AND E.EMPM_KEYID NOT IN (SELECT EREL_EMPM_KEYID FROM ENT_TL_ROLE_EMP_LINK WHERE EREL_ACTIVE = 'Y') ");
             }
         }
 
@@ -602,10 +572,10 @@ public class CommonFilterServiceImpl implements CommonFilterService
         }
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
-     @Override
-     public List<DropDownDto> getCompanyComboList(CommonFilterDto commonFilterDto)
-     {
+    }
+
+    @Override
+    public List<DropDownDto> getCompanyComboList(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -627,11 +597,10 @@ public class CommonFilterServiceImpl implements CommonFilterService
         comboFilter.setCondSql(condSql.toString());
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
-     
-     @Override
-     public List<DropDownDto> getLocationComboList(CommonFilterDto commonFilterDto)
-     {
+    }
+
+    @Override
+    public List<DropDownDto> getLocationComboList(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -659,10 +628,10 @@ public class CommonFilterServiceImpl implements CommonFilterService
         }
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
-     @Override
-     public List<DropDownDto> getSbuComboList(CommonFilterDto commonFilterDto)
-     {
+    }
+
+    @Override
+    public List<DropDownDto> getSbuComboList(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -690,11 +659,10 @@ public class CommonFilterServiceImpl implements CommonFilterService
         comboFilter.setCondSql(condSql.toString());
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
+    }
 
-     @Override
-     public List<DropDownDto> getPbuComboList(CommonFilterDto commonFilterDto)
-     {
+    @Override
+    public List<DropDownDto> getPbuComboList(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -728,10 +696,10 @@ public class CommonFilterServiceImpl implements CommonFilterService
         comboFilter.setCondSql(condSql.toString());
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
-@Override
-     public List<DropDownDto> getSectionComboList(CommonFilterDto commonFilterDto)
-     {
+    }
+
+    @Override
+    public List<DropDownDto> getSectionComboList(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -791,10 +759,10 @@ public class CommonFilterServiceImpl implements CommonFilterService
         comboFilter.setCondSql(condSql.toString());
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
-     @Override
-     public List<DropDownDto> getCellComboList(CommonFilterDto commonFilterDto)
-     {
+    }
+
+    @Override
+    public List<DropDownDto> getCellComboList(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -829,7 +797,8 @@ public class CommonFilterServiceImpl implements CommonFilterService
         }
 
         if ("Y".equals(pcsEnabled)) {
-            condSql.append(" AND CELL_KEYID IN (SELECT PELC_CELLID FROM PCS_TL_ENABLELOSSCAPTURE WHERE PELC_ISPCSENABLED = 'Y') ");
+            condSql.append(
+                    " AND CELL_KEYID IN (SELECT PELC_CELLID FROM PCS_TL_ENABLELOSSCAPTURE WHERE PELC_ISPCSENABLED = 'Y') ");
         }
 
         // NOTE: inferred column names for the flattened view — verify each
@@ -887,10 +856,10 @@ public class CommonFilterServiceImpl implements CommonFilterService
         comboFilter.setCondSql(condSql.toString());
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
-     @Override
-     public List<DropDownDto> getPhenomenaCombo(CommonFilterDto commonFilterDto)
-     {
+    }
+
+    @Override
+    public List<DropDownDto> getPhenomenaCombo(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -915,10 +884,10 @@ public class CommonFilterServiceImpl implements CommonFilterService
         }
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
- @Override
-    public List<DropDownDto> getLossCombo(CommonFilterDto commonFilterDto)
-    {
+    }
+
+    @Override
+    public List<DropDownDto> getLossCombo(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
         comboFilter.setTableName("PCS_VW_LOSSNAMESFORENTRY");
@@ -975,20 +944,17 @@ public class CommonFilterServiceImpl implements CommonFilterService
                 "SELECT DISTINCT KEYID, ORDERNO FROM PCS_VW_LOSSNAMESFORENTRY",
                 rs -> {
                     orderMap.put(rs.getString("KEYID"), rs.getInt("ORDERNO"));
-                }
-        );
+                });
 
         result.sort(Comparator.comparingInt(
-        d -> orderMap.getOrDefault(d.value(), Integer.MAX_VALUE)));
+                d -> orderMap.getOrDefault(d.value(), Integer.MAX_VALUE)));
         // ---------------------------------------------------------------
 
         return result;
     }
 
-
     @Override
-     public List<DropDownDto> getEquipmentNameCombo(CommonFilterDto commonFilterDto)
-     {
+    public List<DropDownDto> getEquipmentNameCombo(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -997,41 +963,36 @@ public class CommonFilterServiceImpl implements CommonFilterService
         comboFilter.setNameField("PLE_NAME");
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
+    }
 
     @Override
-public List<DropDownDto> getLossComboList(CommonFilterDto commonFilterDto)
-{
-    ComboFilterDto comboFilter = new ComboFilterDto();
-    List<Object> params = new ArrayList<>();
+    public List<DropDownDto> getLossComboList(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
 
-    String lossFrom = commonFilterDto != null ? commonFilterDto.getLossFrom() : null;
-    logger.info("lossFrom = {}", lossFrom);
+        String lossFrom = commonFilterDto != null ? commonFilterDto.getLossFrom() : null;
+        logger.info("lossFrom = {}", lossFrom);
 
-    if ("PCSLogConfig".equals(lossFrom))
-    {
-        comboFilter.setIdField("PLCM_KEYID");
-        comboFilter.setNameField("PLCM_LOSSNO");
-        comboFilter.setCodeField("REPLACE(PLCM_PARAMETERNAME, '(+)', '')");
-        comboFilter.setTableName("PCS_TL_LOGCONFIGURATION");
-        comboFilter.setOrderByField("LABEL");
+        if ("PCSLogConfig".equals(lossFrom)) {
+            comboFilter.setIdField("PLCM_KEYID");
+            comboFilter.setNameField("PLCM_LOSSNO");
+            comboFilter.setCodeField("REPLACE(PLCM_PARAMETERNAME, '(+)', '')");
+            comboFilter.setTableName("PCS_TL_LOGCONFIGURATION");
+            comboFilter.setOrderByField("LABEL");
 
-        comboFilter.setCondSql("""
-                                AND PLCM_ISLOSS = 'M'
-                             """);
+            comboFilter.setCondSql("""
+                       AND PLCM_ISLOSS = 'M'
+                    """);
+        } else {
+            logger.warn("getLossComboList called with unsupported/missing lossFrom: {}", lossFrom);
+            return new ArrayList<>();
+        }
+
+        return repository.fillComboValues(comboFilter, params.toArray());
     }
-    else
-    {
-        logger.warn("getLossComboList called with unsupported/missing lossFrom: {}", lossFrom);
-        return new ArrayList<>();
-    }
 
-    return repository.fillComboValues(comboFilter, params.toArray());
-}
-
-@Override
-     public List<DropDownDto> getJHKaizenBeltComboList(CommonFilterDto commonFilterDto)
-     {
+    @Override
+    public List<DropDownDto> getJHKaizenBeltComboList(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -1040,10 +1001,10 @@ public List<DropDownDto> getLossComboList(CommonFilterDto commonFilterDto)
         comboFilter.setNameField("KBEL_NAME");
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
-     @Override
-     public List<DropDownDto> getJHKaizenCategoryComboList(CommonFilterDto commonFilterDto)
-     {
+    }
+
+    @Override
+    public List<DropDownDto> getJHKaizenCategoryComboList(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -1052,11 +1013,10 @@ public List<DropDownDto> getLossComboList(CommonFilterDto commonFilterDto)
         comboFilter.setNameField("KCTM_NAME");
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
+    }
 
-     @Override
-     public List<DropDownDto> getProjectMetricsKpiIndicator(CommonFilterDto commonFilterDto)
-     {
+    @Override
+    public List<DropDownDto> getProjectMetricsKpiIndicator(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -1091,10 +1051,10 @@ public List<DropDownDto> getLossComboList(CommonFilterDto commonFilterDto)
         comboFilter.setCondSql(condSql.toString());
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
-     @Override
-     public List<DropDownDto> getComboWave(CommonFilterDto commonFilterDto)
-     {
+    }
+
+    @Override
+    public List<DropDownDto> getComboWave(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -1121,10 +1081,10 @@ public List<DropDownDto> getLossComboList(CommonFilterDto commonFilterDto)
         comboFilter.setCondSql(condSql.toString());
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
-     @Override
-     public List<DropDownDto> getDmcEmployeeCombo(CommonFilterDto commonFilterDto)
-     {
+    }
+
+    @Override
+    public List<DropDownDto> getDmcEmployeeCombo(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -1152,10 +1112,10 @@ public List<DropDownDto> getLossComboList(CommonFilterDto commonFilterDto)
         comboFilter.setCondSql(condSql.toString());
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
-     @Override
-     public List<DropDownDto> getEmployeeList(CommonFilterDto commonFilterDto)
-     {
+    }
+
+    @Override
+    public List<DropDownDto> getEmployeeList(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -1210,7 +1170,8 @@ public List<DropDownDto> getLossComboList(CommonFilterDto commonFilterDto)
                 sub.append(" AND FRT_FNLN_KEYID IN ( ");
             }
             sub.append(" SELECT flid FROM gen_mv_flidhierarchy ");
-            sub.append(" WHERE POSITION((SELECT CELL_FLID FROM GEN_TL_CELLMST WHERE CELL_KEYID = ?) IN (parentflids || flid)) > 0 ) ");
+            sub.append(
+                    " WHERE POSITION((SELECT CELL_FLID FROM GEN_TL_CELLMST WHERE CELL_KEYID = ?) IN (parentflids || flid)) > 0 ) ");
             params.add(cellId);
 
             condSql.append(" AND EMPM_KEYID IN (").append(sub).append(") ");
@@ -1218,14 +1179,17 @@ public List<DropDownDto> getLossComboList(CommonFilterDto commonFilterDto)
         } else if (ValidationUtil.isValidKeyId(cellId)) {
 
             if ("Y".equals(others)) {
-                condSql.append(" AND EMPM_KEYID NOT IN (SELECT DISTINCT EMPM_KEYID FROM GEN_TL_EMPLOYEEMST, GEN_TL_FNLNROLETEAM WHERE FRT_EMPM_KEYID = EMPM_KEYID AND FRT_FNLN_KEYID IN (SELECT FLID FROM GEN_MV_FLIDHIERARCHY WHERE FNLN_ORIGINALID = ?)) ");
+                condSql.append(
+                        " AND EMPM_KEYID NOT IN (SELECT DISTINCT EMPM_KEYID FROM GEN_TL_EMPLOYEEMST, GEN_TL_FNLNROLETEAM WHERE FRT_EMPM_KEYID = EMPM_KEYID AND FRT_FNLN_KEYID IN (SELECT FLID FROM GEN_MV_FLIDHIERARCHY WHERE FNLN_ORIGINALID = ?)) ");
                 params.add(cellId);
             } else if ("Y".equals(locn)) {
-                condSql.append(" AND EMPM_KEYID NOT IN (SELECT DISTINCT EMPM_KEYID FROM GEN_TL_EMPLOYEEMST, GEN_TL_FNLNROLETEAM WHERE FRT_EMPM_KEYID = EMPM_KEYID AND EMPM_LOCATION = ? AND FRT_FNLN_KEYID IN (SELECT FLID FROM GEN_MV_FLIDHIERARCHY WHERE FNLN_ORIGINALID = ?)) ");
+                condSql.append(
+                        " AND EMPM_KEYID NOT IN (SELECT DISTINCT EMPM_KEYID FROM GEN_TL_EMPLOYEEMST, GEN_TL_FNLNROLETEAM WHERE FRT_EMPM_KEYID = EMPM_KEYID AND EMPM_LOCATION = ? AND FRT_FNLN_KEYID IN (SELECT FLID FROM GEN_MV_FLIDHIERARCHY WHERE FNLN_ORIGINALID = ?)) ");
                 params.add(locnId);
                 params.add(cellId);
             } else {
-                condSql.append(" AND EMPM_KEYID IN (SELECT DISTINCT EMPM_KEYID FROM GEN_TL_EMPLOYEEMST, GEN_TL_FNLNROLETEAM WHERE FRT_EMPM_KEYID = EMPM_KEYID AND FRT_FNLN_KEYID IN (SELECT FLID FROM GEN_MV_FLIDHIERARCHY WHERE FNLN_ORIGINALID = ?)) ");
+                condSql.append(
+                        " AND EMPM_KEYID IN (SELECT DISTINCT EMPM_KEYID FROM GEN_TL_EMPLOYEEMST, GEN_TL_FNLNROLETEAM WHERE FRT_EMPM_KEYID = EMPM_KEYID AND FRT_FNLN_KEYID IN (SELECT FLID FROM GEN_MV_FLIDHIERARCHY WHERE FNLN_ORIGINALID = ?)) ");
                 params.add(cellId);
             }
 
@@ -1255,7 +1219,8 @@ public List<DropDownDto> getLossComboList(CommonFilterDto commonFilterDto)
         }
 
         if (ValidationUtil.isValidKeyId(gradeId)) {
-            condSql.append(" AND EMPM_GRADEID IN ('{}', (SELECT GRDM_KEYID FROM gen_tl_empgrademst WHERE GRDM_ACTIVE = 'Y' AND GRDM_KEYID = ?)) ");
+            condSql.append(
+                    " AND EMPM_GRADEID IN ('{}', (SELECT GRDM_KEYID FROM gen_tl_empgrademst WHERE GRDM_ACTIVE = 'Y' AND GRDM_KEYID = ?)) ");
             params.add(gradeId);
         } else if (ValidationUtil.isValidKeyId(mgr)) {
             condSql.append(" AND EMPM_KEYID IN (SELECT EEMM_MANAGER_ID FROM ENT_TL_EMPMANAGERMST) ");
@@ -1263,10 +1228,12 @@ public List<DropDownDto> getLossComboList(CommonFilterDto commonFilterDto)
 
         if (!ValidationUtil.isValidKeyId(isPbuHead) && ValidationUtil.isValidKeyId(flid)) {
             if (!ValidationUtil.isValidKeyId(trade)) {
-                condSql.append(" AND EMPM_KEYID IN (SELECT DISTINCT EMPM_KEYID FROM GEN_TL_EMPLOYEEMST, GEN_TL_FNLNROLETEAM WHERE FRT_EMPM_KEYID = EMPM_KEYID AND FRT_FNLN_KEYID = ? ");
+                condSql.append(
+                        " AND EMPM_KEYID IN (SELECT DISTINCT EMPM_KEYID FROM GEN_TL_EMPLOYEEMST, GEN_TL_FNLNROLETEAM WHERE FRT_EMPM_KEYID = EMPM_KEYID AND FRT_FNLN_KEYID = ? ");
                 params.add(flid);
                 if ("Y".equals(others)) {
-                    condSql.append(" UNION SELECT EMPM_KEYID FROM GEN_TL_EMPLOYEEMST WHERE EMPM_KEYID NOT IN (SELECT FRT_EMPM_KEYID FROM GEN_TL_FNLNROLETEAM WHERE FRT_FNLN_KEYID = ?) ");
+                    condSql.append(
+                            " UNION SELECT EMPM_KEYID FROM GEN_TL_EMPLOYEEMST WHERE EMPM_KEYID NOT IN (SELECT FRT_EMPM_KEYID FROM GEN_TL_FNLNROLETEAM WHERE FRT_FNLN_KEYID = ?) ");
                     params.add(flid);
                 }
                 condSql.append(") ");
@@ -1279,13 +1246,15 @@ public List<DropDownDto> getLossComboList(CommonFilterDto commonFilterDto)
             // NOTE: matches legacy exactly — OVERWRITES condSql entirely,
             // discarding EMPM_ACTIVE and every condition built above.
             condSql = new StringBuilder();
-            condSql.append(" AND EMPM_KEYID IN (SELECT DISTINCT FRT_EMPM_KEYID FROM GEN_TL_FNLNROLETEAM WHERE FRT_FNLN_KEYID IN (SELECT FNLN_KEYID FROM GEN_VW_FNLN WHERE FNLN_ORIGINALID IN (SELECT PBUT_KEYID FROM GEN_VW_FNLN WHERE FNLN_KEYID = ?)) AND FRT_ROLE_KEYID IN (SELECT ROLE_KEYID FROM ADM_TL_ROLEMST WHERE ROLE_NAME = 'PBU HEAD')) ");
+            condSql.append(
+                    " AND EMPM_KEYID IN (SELECT DISTINCT FRT_EMPM_KEYID FROM GEN_TL_FNLNROLETEAM WHERE FRT_FNLN_KEYID IN (SELECT FNLN_KEYID FROM GEN_VW_FNLN WHERE FNLN_ORIGINALID IN (SELECT PBUT_KEYID FROM GEN_VW_FNLN WHERE FNLN_KEYID = ?)) AND FRT_ROLE_KEYID IN (SELECT ROLE_KEYID FROM ADM_TL_ROLEMST WHERE ROLE_NAME = 'PBU HEAD')) ");
             params.clear();
             params.add(flid);
         } else if (ValidationUtil.isValidKeyId(isDmtLeader)) {
             // NOTE: matches legacy exactly — also OVERWRITES condSql entirely.
             condSql = new StringBuilder();
-            condSql.append(" AND EMPM_KEYID IN (SELECT DISTINCT FRT_EMPM_KEYID FROM GEN_TL_FNLNROLETEAM WHERE FRT_FNLN_KEYID IN (SELECT FNLN_KEYID FROM GEN_VW_FNLN WHERE FNLN_ORIGINALID = ?) AND FRT_ROLE_KEYID IN (SELECT ROLE_KEYID FROM ADM_TL_ROLEMST WHERE ROLE_NAME = 'DMT LEADER')) ");
+            condSql.append(
+                    " AND EMPM_KEYID IN (SELECT DISTINCT FRT_EMPM_KEYID FROM GEN_TL_FNLNROLETEAM WHERE FRT_FNLN_KEYID IN (SELECT FNLN_KEYID FROM GEN_VW_FNLN WHERE FNLN_ORIGINALID = ?) AND FRT_ROLE_KEYID IN (SELECT ROLE_KEYID FROM ADM_TL_ROLEMST WHERE ROLE_NAME = 'DMT LEADER')) ");
             params.clear();
             params.add(dmtId);
         }
@@ -1299,11 +1268,13 @@ public List<DropDownDto> getLossComboList(CommonFilterDto commonFilterDto)
         if (ValidationUtil.isValidKeyId(rtal) && !"empFilter".equals(rtal)) {
             String[] rtlRole = rtal.split(",");
             if (rtlRole.length > 1 && ValidationUtil.isValidKeyId(rtlRole[1])) {
-                condSql.append(" AND EMPM_ROLEID = ? AND EMPM_KEYID NOT IN (SELECT EREL_EMPM_KEYID FROM ENT_TL_ROLE_EMP_LINK WHERE EREL_RTAL_KEYID = ?) ");
+                condSql.append(
+                        " AND EMPM_ROLEID = ? AND EMPM_KEYID NOT IN (SELECT EREL_EMPM_KEYID FROM ENT_TL_ROLE_EMP_LINK WHERE EREL_RTAL_KEYID = ?) ");
                 params.add(rtlRole[1]);
                 params.add(rtlRole[0]);
             } else {
-                condSql.append(" AND EMPM_KEYID NOT IN (SELECT EREL_EMPM_KEYID FROM ENT_TL_ROLE_EMP_LINK WHERE EREL_ACTIVE = 'Y') ");
+                condSql.append(
+                        " AND EMPM_KEYID NOT IN (SELECT EREL_EMPM_KEYID FROM ENT_TL_ROLE_EMP_LINK WHERE EREL_ACTIVE = 'Y') ");
             }
         }
 
@@ -1320,110 +1291,121 @@ public List<DropDownDto> getLossComboList(CommonFilterDto commonFilterDto)
         }
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
+    }
 
-   //   @Override
-   //   public List<DropDownDto> getEmployeeCombo(CommonFilterDto commonFilterDto)
-   //   {
-   //      ComboFilterDto comboFilter = new ComboFilterDto();
-   //      List<Object> params = new ArrayList<>();
+    // @Override
+    // public List<DropDownDto> getEmployeeCombo(CommonFilterDto commonFilterDto)
+    // {
+    // ComboFilterDto comboFilter = new ComboFilterDto();
+    // List<Object> params = new ArrayList<>();
 
-   //      comboFilter.setTableName("GEN_TL_EMPLOYEEMST");
-   //      comboFilter.setIdField("EMPM_KEYID");
-   //      comboFilter.setNameField("TRIM(EMPM_NAME)");
-   //      comboFilter.setCodeField("TRIM(EMPM_CODE)");
-   //      comboFilter.setOrderByField("LABEL");
+    // comboFilter.setTableName("GEN_TL_EMPLOYEEMST");
+    // comboFilter.setIdField("EMPM_KEYID");
+    // comboFilter.setNameField("TRIM(EMPM_NAME)");
+    // comboFilter.setCodeField("TRIM(EMPM_CODE)");
+    // comboFilter.setOrderByField("LABEL");
 
-   //      String locnid = commonFilterDto != null ? commonFilterDto.getLocnId() : null;
-   //      String cellid = commonFilterDto != null ? commonFilterDto.getCellId() : null;
-   //      String rtal = commonFilterDto != null ? commonFilterDto.getRtal() : null;
-   //      String tradeid = commonFilterDto != null ? commonFilterDto.getTradeid() : null;
-   //      String yymode = commonFilterDto != null ? commonFilterDto.getYymode() : null;
-   //      String others = commonFilterDto != null ? commonFilterDto.getOthers() : null;
-   //      String currentUserCcno = commonFilterDto != null ? commonFilterDto.getCurrentUserCcno() : null;
-   //      String comboKey = commonFilterDto != null ? commonFilterDto.getComboKey() : null;
+    // String locnid = commonFilterDto != null ? commonFilterDto.getLocnId() : null;
+    // String cellid = commonFilterDto != null ? commonFilterDto.getCellId() : null;
+    // String rtal = commonFilterDto != null ? commonFilterDto.getRtal() : null;
+    // String tradeid = commonFilterDto != null ? commonFilterDto.getTradeid() :
+    // null;
+    // String yymode = commonFilterDto != null ? commonFilterDto.getYymode() : null;
+    // String others = commonFilterDto != null ? commonFilterDto.getOthers() : null;
+    // String currentUserCcno = commonFilterDto != null ?
+    // commonFilterDto.getCurrentUserCcno() : null;
+    // String comboKey = commonFilterDto != null ? commonFilterDto.getComboKey() :
+    // null;
 
-   //      String idList = comboKey;
-   //      if (ValidationUtil.isValidKeyId(currentUserCcno)) {
-   //          idList = ValidationUtil.isValidKeyId(idList) ? (idList + "," + currentUserCcno) : currentUserCcno;
-   //      }
+    // String idList = comboKey;
+    // if (ValidationUtil.isValidKeyId(currentUserCcno)) {
+    // idList = ValidationUtil.isValidKeyId(idList) ? (idList + "," +
+    // currentUserCcno) : currentUserCcno;
+    // }
 
-   //      StringBuilder condSql = new StringBuilder(" AND EMPM_ACTIVE = 'Y' ");
+    // StringBuilder condSql = new StringBuilder(" AND EMPM_ACTIVE = 'Y' ");
 
-   //      if (ValidationUtil.isValidKeyId(cellid)) {
+    // if (ValidationUtil.isValidKeyId(cellid)) {
 
-   //          StringBuilder sub = new StringBuilder();
-   //          sub.append(" SELECT DISTINCT EMPM_KEYID ");
-   //          sub.append(" FROM GEN_TL_EMPLOYEEMST E ");
-   //          sub.append(" JOIN GEN_TL_FNLNROLETEAM R ON R.FRT_EMPM_KEYID = E.EMPM_KEYID ");
+    // StringBuilder sub = new StringBuilder();
+    // sub.append(" SELECT DISTINCT EMPM_KEYID ");
+    // sub.append(" FROM GEN_TL_EMPLOYEEMST E ");
+    // sub.append(" JOIN GEN_TL_FNLNROLETEAM R ON R.FRT_EMPM_KEYID = E.EMPM_KEYID
+    // ");
 
-   //          if (ValidationUtil.isValidKeyId(tradeid) && "Y".equals(yymode) && "N".equals(others)) {
+    // if (ValidationUtil.isValidKeyId(tradeid) && "Y".equals(yymode) &&
+    // "N".equals(others)) {
 
-   //              sub.append(" JOIN GEN_TL_TEAMTRADELINK T ON T.FRP_FRT_KEYID = R.FRT_KEYID ");
-   //              sub.append(" WHERE E.EMPM_ACTIVE = 'Y' ");
-   //              sub.append(" AND R.FRT_FNLN_KEYID IN (SELECT FLID FROM GEN_MV_FLIDHIERARCHY WHERE FNLN_ORIGINALID = ?) ");
-   //              sub.append(" AND FRP_TRADEID = ? ");
-   //              params.add(cellid);
-   //              params.add(tradeid);
+    // sub.append(" JOIN GEN_TL_TEAMTRADELINK T ON T.FRP_FRT_KEYID = R.FRT_KEYID ");
+    // sub.append(" WHERE E.EMPM_ACTIVE = 'Y' ");
+    // sub.append(" AND R.FRT_FNLN_KEYID IN (SELECT FLID FROM GEN_MV_FLIDHIERARCHY
+    // WHERE FNLN_ORIGINALID = ?) ");
+    // sub.append(" AND FRP_TRADEID = ? ");
+    // params.add(cellid);
+    // params.add(tradeid);
 
-   //          } else if (ValidationUtil.isValidKeyId(tradeid) && "Y".equals(yymode) && "Y".equals(others)) {
+    // } else if (ValidationUtil.isValidKeyId(tradeid) && "Y".equals(yymode) &&
+    // "Y".equals(others)) {
 
-   //              sub.append(" JOIN GEN_TL_TEAMTRADELINK T ON T.FRP_FRT_KEYID = R.FRT_KEYID ");
-   //              sub.append(" WHERE E.EMPM_ACTIVE = 'Y' ");
-   //              // NOTE: matches legacy exactly — cell/trade filter lines for
-   //              // this branch are commented out in the source, so this
-   //              // branch just requires an active employee with any
-   //              // team-trade link at all.
+    // sub.append(" JOIN GEN_TL_TEAMTRADELINK T ON T.FRP_FRT_KEYID = R.FRT_KEYID ");
+    // sub.append(" WHERE E.EMPM_ACTIVE = 'Y' ");
+    // // NOTE: matches legacy exactly — cell/trade filter lines for
+    // // this branch are commented out in the source, so this
+    // // branch just requires an active employee with any
+    // // team-trade link at all.
 
-   //          } else {
+    // } else {
 
-   //              sub.append(" WHERE E.EMPM_ACTIVE = 'Y' ");
-   //              sub.append(" AND R.FRT_FNLN_KEYID IN (SELECT FLID FROM GEN_MV_FLIDHIERARCHY WHERE FNLN_ORIGINALID = ?) ");
-   //              params.add(cellid);
-   //          }
+    // sub.append(" WHERE E.EMPM_ACTIVE = 'Y' ");
+    // sub.append(" AND R.FRT_FNLN_KEYID IN (SELECT FLID FROM GEN_MV_FLIDHIERARCHY
+    // WHERE FNLN_ORIGINALID = ?) ");
+    // params.add(cellid);
+    // }
 
-   //          condSql.append(" AND EMPM_KEYID IN (").append(sub).append(") ");
-   //      }
+    // condSql.append(" AND EMPM_KEYID IN (").append(sub).append(") ");
+    // }
 
-   //      if (ValidationUtil.isValidKeyId(locnid)) {
-   //          condSql.append(" AND EMPM_LOCATION = ? ");
-   //          params.add(locnid);
-   //      }
+    // if (ValidationUtil.isValidKeyId(locnid)) {
+    // condSql.append(" AND EMPM_LOCATION = ? ");
+    // params.add(locnid);
+    // }
 
-   //      if (ValidationUtil.isValidKeyId(rtal) && !"empFilter".equals(rtal)) {
-   //          String[] rtlRole = rtal.split(",");
-   //          if (rtlRole.length > 1 && ValidationUtil.isValidKeyId(rtlRole[1])) {
-   //              condSql.append(" AND EMPM_ROLEID = ? AND EMPM_KEYID NOT IN (SELECT EREL_EMPM_KEYID FROM ENT_TL_ROLE_EMP_LINK WHERE EREL_RTAL_KEYID = ?) ");
-   //              params.add(rtlRole[1]);
-   //              params.add(rtlRole[0]);
-   //          } else {
-   //              condSql.append(" AND EMPM_KEYID NOT IN (SELECT EREL_EMPM_KEYID FROM ENT_TL_ROLE_EMP_LINK WHERE EREL_ACTIVE = 'Y') ");
-   //          }
-   //      }
+    // if (ValidationUtil.isValidKeyId(rtal) && !"empFilter".equals(rtal)) {
+    // String[] rtlRole = rtal.split(",");
+    // if (rtlRole.length > 1 && ValidationUtil.isValidKeyId(rtlRole[1])) {
+    // condSql.append(" AND EMPM_ROLEID = ? AND EMPM_KEYID NOT IN (SELECT
+    // EREL_EMPM_KEYID FROM ENT_TL_ROLE_EMP_LINK WHERE EREL_RTAL_KEYID = ?) ");
+    // params.add(rtlRole[1]);
+    // params.add(rtlRole[0]);
+    // } else {
+    // condSql.append(" AND EMPM_KEYID NOT IN (SELECT EREL_EMPM_KEYID FROM
+    // ENT_TL_ROLE_EMP_LINK WHERE EREL_ACTIVE = 'Y') ");
+    // }
+    // }
 
-   //      comboFilter.setCondSql(condSql.toString());
+    // comboFilter.setCondSql(condSql.toString());
 
-   //      Object[] paramsArray = params.toArray();
+    // Object[] paramsArray = params.toArray();
 
-   //      if (ValidationUtil.isValidKeyId(idList)) {
-   //          comboFilter.setId(idList);
+    // if (ValidationUtil.isValidKeyId(idList)) {
+    // comboFilter.setId(idList);
 
-   //          // fillComboValues embeds condSql into BOTH UNION branches when
-   //          // an id is set, but only consumes one copy of the params array
-   //          // for all placeholders across both branches — so we must
-   //          // duplicate the params to match.
-   //          if (!"grid".equals(comboFilter.getMode()) && !ValidationUtil.isValidKeyId(comboFilter.getName())) {
-   //              List<Object> doubled = new ArrayList<>(params);
-   //              doubled.addAll(params);
-   //              paramsArray = doubled.toArray();
-   //          }
-   //      }
-   //     return repository.fillComboValues(comboFilter, paramsArray);
-   //   }
+    // // fillComboValues embeds condSql into BOTH UNION branches when
+    // // an id is set, but only consumes one copy of the params array
+    // // for all placeholders across both branches — so we must
+    // // duplicate the params to match.
+    // if (!"grid".equals(comboFilter.getMode()) &&
+    // !ValidationUtil.isValidKeyId(comboFilter.getName())) {
+    // List<Object> doubled = new ArrayList<>(params);
+    // doubled.addAll(params);
+    // paramsArray = doubled.toArray();
+    // }
+    // }
+    // return repository.fillComboValues(comboFilter, paramsArray);
+    // }
 
-   @Override
-     public List<DropDownDto> getEmployeeCombo(CommonFilterDto commonFilterDto)
-     {
+    @Override
+    public List<DropDownDto> getEmployeeCombo(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -1460,7 +1442,8 @@ public List<DropDownDto> getLossComboList(CommonFilterDto commonFilterDto)
 
                 sub.append(" JOIN GEN_TL_TEAMTRADELINK T ON T.FRP_FRT_KEYID = R.FRT_KEYID ");
                 sub.append(" WHERE E.EMPM_ACTIVE = 'Y' ");
-                sub.append(" AND R.FRT_FNLN_KEYID IN (SELECT FLID FROM GEN_MV_FLIDHIERARCHY WHERE FNLN_ORIGINALID = ?) ");
+                sub.append(
+                        " AND R.FRT_FNLN_KEYID IN (SELECT FLID FROM GEN_MV_FLIDHIERARCHY WHERE FNLN_ORIGINALID = ?) ");
                 sub.append(" AND FRP_TRADEID = ? ");
                 params.add(cellid);
                 params.add(tradeid);
@@ -1473,7 +1456,8 @@ public List<DropDownDto> getLossComboList(CommonFilterDto commonFilterDto)
             } else {
 
                 sub.append(" WHERE E.EMPM_ACTIVE = 'Y' ");
-                sub.append(" AND R.FRT_FNLN_KEYID IN (SELECT FLID FROM GEN_MV_FLIDHIERARCHY WHERE FNLN_ORIGINALID = ?) ");
+                sub.append(
+                        " AND R.FRT_FNLN_KEYID IN (SELECT FLID FROM GEN_MV_FLIDHIERARCHY WHERE FNLN_ORIGINALID = ?) ");
                 params.add(cellid);
             }
 
@@ -1488,11 +1472,13 @@ public List<DropDownDto> getLossComboList(CommonFilterDto commonFilterDto)
         if (ValidationUtil.isValidKeyId(rtal) && !"empFilter".equals(rtal)) {
             String[] rtlRole = rtal.split(",");
             if (rtlRole.length > 1 && ValidationUtil.isValidKeyId(rtlRole[1])) {
-                condSql.append(" AND EMPM_ROLEID = ? AND EMPM_KEYID NOT IN (SELECT EREL_EMPM_KEYID FROM ENT_TL_ROLE_EMP_LINK WHERE EREL_RTAL_KEYID = ?) ");
+                condSql.append(
+                        " AND EMPM_ROLEID = ? AND EMPM_KEYID NOT IN (SELECT EREL_EMPM_KEYID FROM ENT_TL_ROLE_EMP_LINK WHERE EREL_RTAL_KEYID = ?) ");
                 params.add(rtlRole[1]);
                 params.add(rtlRole[0]);
             } else {
-                condSql.append(" AND EMPM_KEYID NOT IN (SELECT EREL_EMPM_KEYID FROM ENT_TL_ROLE_EMP_LINK WHERE EREL_ACTIVE = 'Y') ");
+                condSql.append(
+                        " AND EMPM_KEYID NOT IN (SELECT EREL_EMPM_KEYID FROM ENT_TL_ROLE_EMP_LINK WHERE EREL_ACTIVE = 'Y') ");
             }
         }
 
@@ -1532,7 +1518,8 @@ public List<DropDownDto> getLossComboList(CommonFilterDto commonFilterDto)
         idFilter.setCondSql(idCond.toString());
         result.addAll(repository.fillComboValues(idFilter, idParams.toArray()));
 
-        // Branch 2 — everyone else, with the full filter, excluding the highlighted id(s)
+        // Branch 2 — everyone else, with the full filter, excluding the highlighted
+        // id(s)
         StringBuilder restCond = new StringBuilder(condSql);
         List<Object> restParams = new ArrayList<>(params);
         if (ids.length > 1) {
@@ -1550,468 +1537,475 @@ public List<DropDownDto> getLossComboList(CommonFilterDto commonFilterDto)
         result.addAll(repository.fillComboValues(comboFilter, restParams.toArray()));
 
         return result;
-     }
-
-
-
-//-------------------------------------------------HARI---------------------------------
-
-//******************************Training Calender*********************************************************
-
- @Override
-   public List<DropDownDto> getETTradeComboList(CommonFilterDto commonFilterDto) {
-      ComboFilterDto comboFilter = new ComboFilterDto();
-      List<Object> params = new ArrayList<>();
-
-      comboFilter.setTableName("ENT_TL_TRGCALFUNCTION");
-      comboFilter.setIdField("ETFN_KEYID");
-      comboFilter.setNameField("ETFN_NAME");
-      comboFilter.setId(commonFilterDto.getComboKey());
-
-      return repository.fillComboValues(comboFilter, params.toArray());
-   }
-
-
-
-   @Override
-   public List<DropDownDto> getFacultyComboList(CommonFilterDto commonFilterDto) {
-      ComboFilterDto comboFilter = new ComboFilterDto();
-      List<Object> params = new ArrayList<>();
-
-      comboFilter.setIdField("EMPID");
-      comboFilter.setNameField("EMPROLE");
-      comboFilter.setTableName("ENT_VW_FACULTYMST_NEW");
-
-      String sectId = commonFilterDto.getSectionId();
-      String flId = commonFilterDto.getFlId();
-      String locnid = commonFilterDto.getLocationId();
-      String facultyFilterType = "Y".equals(commonFilterDto.getFacultyOthers()) ? "other" : "dmt";
-
-      StringBuilder sb = new StringBuilder();
-
-      String resolvedSectId = null;
-      if (ValidationUtil.isValidKeyId(sectId)) {
-         resolvedSectId = sectId;
-      } else if (ValidationUtil.isValidKeyId(flId)) {
-         resolvedSectId = repository.resolveSectId(flId);
-         logger.info("flId {} resolved to sectId {}", flId, resolvedSectId);
-      }
-
-      if (ValidationUtil.isValidKeyId(resolvedSectId)) {
-         if ("other".equals(facultyFilterType)) {
-            sb.append(" AND faculty_sect_keyid IS NOT NULL");
-            sb.append(" AND faculty_sect_keyid <> ?");
-            sb.append(" AND emp_sect_keyid <> ?");
-            params.add(resolvedSectId);
-            params.add(resolvedSectId);
-            if (ValidationUtil.isValidKeyId(locnid)) {
-               sb.append(" AND locn_keyid = ?");
-               params.add(locnid);
-            }
-         } else {
-            sb.append(" AND (");
-            sb.append("   faculty_sect_keyid = ?");
-            sb.append("   OR emp_sect_keyid = ?");
-            sb.append("   OR (faculty_sect_keyid IS NULL");
-            params.add(resolvedSectId);
-            params.add(resolvedSectId);
-            if (ValidationUtil.isValidKeyId(locnid)) {
-               sb.append("       AND locn_keyid = ?");
-               params.add(locnid);
-            }
-            sb.append("   )");
-            sb.append(" )");
-         }
-      } else if (ValidationUtil.isValidKeyId(locnid)) {
-         sb.append(" AND locn_keyid = ?");
-         params.add(locnid);
-      }
-
-      comboFilter.setCondSql(sb.toString());
-
-      return repository.fillComboValues(comboFilter, params.toArray());
-   }
-
-
- @Override
-   public List<DropDownDto> getTopicComboList(CommonFilterDto commonFilterDto) {
-      ComboFilterDto comboFilter = new ComboFilterDto();
-      List<Object> params = new ArrayList<>();
-
-      comboFilter.setIdField("TOPI_KEYID");
-      comboFilter.setNameField("TOPI_NAME");
-      comboFilter.setTableName("ENT_TL_TOPICMST");
-
-      StringBuilder sb = new StringBuilder();
-
-      if (ValidationUtil.isValidKeyId(commonFilterDto.getRoleId())) {
-         logger.info("Role is {}", commonFilterDto.getRoleId());
-         sb.append(
-               " AND TOPI_KEYID IN (SELECT TMTM_TOPI_KEYID FROM ENT_TL_UNIQPOSTOPIC_LINKMST WHERE TMTM_ROLE_KEYID = ?)");
-         params.add(commonFilterDto.getRoleId());
-      }
-
-      if (ValidationUtil.isValidKeyId(commonFilterDto.getTopicType())) {
-         logger.info("Related is {}", commonFilterDto.getTopicType());
-         sb.append(" AND TOPI_RELATEDTO = ?");
-         params.add(commonFilterDto.getTopicType());
-      }
-
-      comboFilter.setCondSql(sb.toString());
-
-      return repository.fillComboValues(comboFilter, params.toArray());
-   }
-
-@Override
-   public List<DropDownDto> getRoleComboList(CommonFilterDto commonFilterDto) {
-      ComboFilterDto comboFilter = new ComboFilterDto();
-      List<Object> params = new ArrayList<>();
-
-      comboFilter.setIdField("ROLE_KEYID");
-      comboFilter.setNameField("ROLE_NAME");
-
-      logger.info("{} commonfiltertopic", commonFilterDto.getFlId());
-
-      StringBuilder keyIdCnd = new StringBuilder();
-      List<Object> keyIdParams = new ArrayList<>();
-
-      if (ValidationUtil.isValidKeyId(commonFilterDto.getRoleId())) {
-         keyIdCnd.append(" AND ROLE_KEYID = ? ");
-         keyIdParams.add(commonFilterDto.getRoleId());
-      }
-
-      if (ValidationUtil.isValidKeyId(commonFilterDto.getTopicId())) {
-         keyIdCnd.append(" AND ROLE_KEYID IN ( ")
-               .append(" SELECT TMTM_ROLE_KEYID ")
-               .append(" FROM ENT_TL_UNIQPOSTOPIC_LINKMST ")
-               .append(" WHERE TMTM_TOPI_KEYID = ? ")
-               .append(")");
-         keyIdParams.add(commonFilterDto.getTopicId());
-      }
-
-      if (ValidationUtil.isValidKeyId(commonFilterDto.getFlId())) {
-
-         comboFilter.setNameField("ROLE_NAME || '-' || FNLN_DISPLAYCODE");
-
-         StringBuilder cnd = new StringBuilder(" AND ROLE_FLID = FLID ");
-
-         String type = ValidationUtil.isValidKeyId(commonFilterDto.getChildFlids())
-               ? commonFilterDto.getChildFlids()
-               : "Y";
-
-         if ("Y".equals(type)) {
-            cnd.append(" AND POSITION(? IN (PARENTFLIDS || FLID)) > 0 ");
-            params.add(commonFilterDto.getFlId());
-         } else {
-            cnd.append(" AND FLID = ? ");
-            params.add(commonFilterDto.getFlId());
-         }
-
-         params.addAll(keyIdParams);
-         cnd.append(keyIdCnd);
-
-         comboFilter.setCondSql(cnd.toString());
-         comboFilter.setTableName("ent_vw_rolemst");
-
-      } else {
-         params.addAll(keyIdParams);
-         comboFilter.setCondSql(keyIdCnd.toString());
-         comboFilter.setTableName("GEN_TL_ROLEMST");
-      }
-
-      return repository.fillComboValues(comboFilter, params.toArray());
-   }
-
-
-
- @Override
-   public List<DropDownDto> getVenueComboList(CommonFilterDto commonFilterDto) {
-      ComboFilterDto comboFilter = new ComboFilterDto();
-      List<Object> params = new ArrayList<>();
-
-      comboFilter.setIdField("VENU_KEYID");
-      comboFilter.setCodeField("VENU_CODE");
-      comboFilter.setNameField("VENU_NAME");
-      comboFilter.setTableName("ENT_TL_VENUEMST");
-
-      if (ValidationUtil.isValidKeyId(commonFilterDto.getFlId())) {
-         StringBuilder sb = new StringBuilder();
-         sb.append(" AND VENU_FLID IN (SELECT FNLN_KEYID FROM GEN_TL_FUNCTIONALLOCN WHERE ");
-         sb.append(" FNLN_ORIGINALID IN (SELECT SUBSTR(FNLN_ELEMENTID,12,10) ");
-         sb.append(" FROM GEN_VW_FNLN WHERE FNLN_KEYID = ?) ) ");
-         comboFilter.setCondSql(sb.toString());
-         params.add(commonFilterDto.getFlId());
-      }
-
-      return repository.fillComboValues(comboFilter, params.toArray());
-   }
-
-
-@Override
-   public List<DropDownDto> getDeliveryModeCombo(CommonFilterDto commonFilterDto) {
-      ComboFilterDto comboFilter = new ComboFilterDto();
-      List<Object> params = new ArrayList<>();
-
-      comboFilter.setNameField("TMOD_NAME");
-      comboFilter.setCodeField("TMOD_CODE");
-      comboFilter.setIdField("TMOD_KEYID");
-      comboFilter.setCondSql(" AND TMOD_ACTIVE = 'Y' ");
-      comboFilter.setTableName("ENT_TL_DELIVERYMODEMST");
-
-      return repository.fillComboValues(comboFilter, params.toArray());
-   }
-
-
-@Override
-   public List<DropDownDto> getCategoryComboList(CommonFilterDto commonFilterDto) {
-      ComboFilterDto comboFilter = new ComboFilterDto();
-      List<Object> params = new ArrayList<>();
-
-      comboFilter.setIdField("TCAT_KEYID");
-      comboFilter.setNameField("TCAT_NAME");
-      comboFilter.setCondSql(" AND TCAT_ACTIVE = 'Y' ");
-      comboFilter.setTableName("ENT_TL_TOPICCATEGORYMST");
-
-      return repository.fillComboValues(comboFilter, params.toArray());
-   }
-
-
-@Override
-   public List<DropDownDto> getGridTopicComboList(CommonFilterDto commonFilterDto) {
-    ComboFilterDto comboFilter = new ComboFilterDto();
-    List<Object> params = new ArrayList<>();
-
-    comboFilter.setIdField("TOPI_KEYID");
-    comboFilter.setNameField("TOPI_NAME");
-    comboFilter.setTableName("ENT_TL_TOPICMST");
-
-    StringBuilder sb = new StringBuilder();
-
-    if (ValidationUtil.isValidKeyId(commonFilterDto.getRoleId())) {
-        logger.info("Range is {}", commonFilterDto.getRoleId());
-        sb.append(" AND TOPI_KEYID IN (SELECT TMTM_TOPI_KEYID FROM ENT_TL_UNIQPOSTOPIC_LINKMST WHERE TMTM_ROLE_KEYID = ?)");
-        params.add(commonFilterDto.getRoleId());
     }
 
-    if (ValidationUtil.isValidKeyId(commonFilterDto.getFlId())) {
-        logger.info("Flid is {}", commonFilterDto.getFlId());
-        sb.append(" AND TOPI_LOCATIONID = ?");
-        params.add(commonFilterDto.getFlId());
-    }
+    // -------------------------------------------------HARI---------------------------------
 
-    if (ValidationUtil.isValidKeyId(commonFilterDto.getTopicType())) {
-        logger.info("Related is {}", commonFilterDto.getTopicType());
-        sb.append(" AND TOPI_RELATEDTO = ?");
-        params.add(commonFilterDto.getTopicType());
-    }
+    // ******************************Training
+    // Calender*********************************************************
 
-    comboFilter.setCondSql(sb.toString());
-
-    return repository.fillComboValues(comboFilter, params.toArray());
-}
-
-
-@Override
-public List<DropDownDto> getTradeComboList(CommonFilterDto commonFilterDto)
-{
-    ComboFilterDto comboFilter = new ComboFilterDto();
-    List<Object> params = new ArrayList<>();
-
-    comboFilter.setIdField("TRDM_KEYID");
-    comboFilter.setNameField("TRDM_NAME");
-    comboFilter.setTableName("GEN_TL_TRADEMST");
-
-    return repository.fillComboValues(comboFilter, params.toArray());
-}
-
-//****************SkillIndex****************
-@Override
-public List<DropDownDto> getEmpTypeCombo(CommonFilterDto commonFilterDto)
-{
-    ComboFilterDto comboFilter = new ComboFilterDto();
-    List<Object> params = new ArrayList<>();
-
-    comboFilter.setCodeField("ETPM_CODE");
-    comboFilter.setIdField("ETPM_KEYID");
-    comboFilter.setNameField("ETPM_NAME");
-    comboFilter.setTableName("GEN_TL_EMPTYPE_MST");
-
-    return repository.fillComboValues(comboFilter, params.toArray());
-}
-//**************KnowWhy*************
-
-@Override
-public List<DropDownDto> getDefactPhenamenComboList(CommonFilterDto commonFilterDto)
-{
-    ComboFilterDto comboFilter = new ComboFilterDto();
-    List<Object> params = new ArrayList<>();
-
-    comboFilter.setIdField("QPHM_KEYID");
-    comboFilter.setNameField("QPHM_NAME");
-    comboFilter.setTableName("QTM_TL_PHENOMENAMST");
-
-    return repository.fillComboValues(comboFilter, params.toArray());
-}
-
-//*****Kaizen*************
-@Override
-public List<DropDownDto> getKznThemeCategory(CommonFilterDto commonFilterDto)
-{
-    ComboFilterDto comboFilter = new ComboFilterDto();
-    List<Object> params = new ArrayList<>();
-
-    comboFilter.setNameField("KZCT_NAME");
-    comboFilter.setIdField("KZCT_KEYID");
-    comboFilter.setTableName("KZN_TL_CATEGORYTHMMST");
-    comboFilter.setCondSql(" AND KZCT_ACTIVE = 'Y' ");
-
-    return repository.fillComboValues(comboFilter, params.toArray());
-}
-
-@Override
-public List<DropDownDto> getKznNoName(CommonFilterDto commonFilterDto)
-{
-    ComboFilterDto comboFilter = new ComboFilterDto();
-    List<Object> params = new ArrayList<>();
-
-    comboFilter.setIdField("KZPM_PROJECTNO");
-    comboFilter.setCodeField("KZPM_PROJECTNO");
-    comboFilter.setNameField("KZPM_PROJECTNAME");
-    comboFilter.setTableName("KZN_TL_PROJECTCREATIONMST");
-
-    return repository.fillComboValues(comboFilter, params.toArray());
-}
-
-@Override
-public List<DropDownDto> getWhyWhyCombo(CommonFilterDto commonFilterDto)
-{
-    ComboFilterDto comboFilter = new ComboFilterDto();
-    List<Object> params = new ArrayList<>();
-
-    comboFilter.setCodeField("WWMS_KEYID");
-    comboFilter.setIdField("WWMS_KEYID");
-
-    if (ValidationUtil.isValidKeyId(commonFilterDto.getWwmsKeyid())) {
-        comboFilter.setCondSql(" AND WWMS_REFDOCNO = ? AND WWMS_REFDOCTYPE = 'KZN' ");
-        params.add(commonFilterDto.getWwmsKeyid());
-    }
-
-    comboFilter.setTableName("BDM_TL_WHYWHYMST");
-
-    return repository.fillComboValues(comboFilter, params.toArray());
-}
-
-@Override
-public List<DropDownDto> getKpiCombo(CommonFilterDto commonFilterDto)
-{
-    ComboFilterDto comboFilter = new ComboFilterDto();
-    List<Object> params = new ArrayList<>();
-
-    logger.info("KPI Flid {}", commonFilterDto.getFlId());
-
-    comboFilter.setNameField("KINK_INDICATORNAME");
-    comboFilter.setIdField("KINK_KEYID");
-    comboFilter.setTableName("KPI_TL_INDICATOR, KPI_TL_INDICATOR_DEPT_LINK");
-    comboFilter.setCondSql(" AND KIDL_INDICATORID = KINK_KEYID AND KIDL_DEPTID = ? ");
-    params.add(commonFilterDto.getFlId());
-
-    return repository.fillComboValues(comboFilter, params.toArray());
-}
-
-@Override
-public List<DropDownDto> getMould(CommonFilterDto commonFilterDto)
-{
-    ComboFilterDto comboFilter = new ComboFilterDto();
-    List<Object> params = new ArrayList<>();
-
-    comboFilter.setCodeField("MLDM_DESCRIPTION");
-    comboFilter.setIdField("MLDM_MOULDID");
-    comboFilter.setTableName("GEN_TL_MOULDMST");
-
-    if (ValidationUtil.isValidKeyId(commonFilterDto.getMchId())) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(" AND MLDM_MOULDID IN (SELECT MMLK_MOULDID FROM GEN_TL_MOULDMACHINELINK");
-        sb.append(" WHERE MMLK_MACHINEID = ?)");
-        comboFilter.setCondSql(sb.toString());
-        params.add(commonFilterDto.getMchId());
-    }
-
-    return repository.fillComboValues(comboFilter, params.toArray());
-}
-//--------------------------------------------GOPI------------------------------------
-// ---- Why Why Analysis: Pillar ----
-@Override
-public List<DropDownDto> getWhyWhyPillarCombo(CommonFilterDto commonFilterDto)
-{
-    ComboFilterDto comboFilter = new ComboFilterDto();
-    List<Object> params = new ArrayList<>();
-
-    comboFilter.setTableName("GEN_TL_TPMPILLARMST");
-    comboFilter.setIdField("TPMP_KEYID");
-    comboFilter.setNameField("TRIM(TPMP_NAME)");
-    comboFilter.setCodeField("TRIM(TPMP_CODE)");
-    comboFilter.setOrderByField("LABEL");
-
-    return repository.fillComboValues(comboFilter, params.toArray());
-}
-// ---- OPL: Process ----
-@Override
-public List<DropDownDto> getOplProcessCombo(CommonFilterDto commonFilterDto)
-{
-    ComboFilterDto comboFilter = new ComboFilterDto();
-    List<Object> params = new ArrayList<>();
-
-    comboFilter.setTableName("QTM_TL_PROCESSMST");
-    comboFilter.setIdField("QPOM_KEYID");
-    comboFilter.setNameField("TRIM(QPOM_NAME)");
-    comboFilter.setOrderByField("LABEL");
-
-    if (commonFilterDto != null && ValidationUtil.isValidKeyId(commonFilterDto.getFlId())) {
-        comboFilter.setCondSql("""
-                                AND QPOM_FLID IN (
-                                    SELECT FLID FROM GEN_MV_FLIDHIERARCHY
-                                    WHERE POSITION(? IN (COALESCE(PARENTFLIDS,'') || '-' || COALESCE(FLID,''))) > 0
-                                )
-                             """);
-        params.add(commonFilterDto.getFlId());
-    }
-
-    return repository.fillComboValues(comboFilter, params.toArray());
-}
-// ---- Field Audit Sheet: Service Provider ----
-@Override
-public List<DropDownDto> getFieldAuditServiceProviderCombo(CommonFilterDto commonFilterDto)
-{
-    ComboFilterDto comboFilter = new ComboFilterDto();
-    List<Object> params = new ArrayList<>();
-
-    comboFilter.setTableName("ADM_TL_SERVICEPROVIDERMST");
-    comboFilter.setIdField("ASPM_KEYID");
-    comboFilter.setNameField("TRIM(ASPM_NAME)");
-    comboFilter.setOrderByField("LABEL");
-
-    return repository.fillComboValues(comboFilter, params.toArray());
-}
-// ---- Visual SOP: Maintenance Section (reuses Trade master) ----
-@Override
-public List<DropDownDto> getVisualSopMaintSectionCombo(CommonFilterDto commonFilterDto)
-{
-    ComboFilterDto comboFilter = new ComboFilterDto();
-    List<Object> params = new ArrayList<>();
-
-    comboFilter.setTableName("GEN_TL_TRADEMST");
-    comboFilter.setIdField("TRDM_KEYID");
-    comboFilter.setNameField("TRIM(TRDM_NAME)");
-    comboFilter.setCodeField("TRIM(TRDM_CODE)");
-    comboFilter.setOrderByField("LABEL");
-
-    return repository.fillComboValues(comboFilter, params.toArray());
-}
-
-// ---- Critical Process: Unit of Measurement ----
     @Override
-    public List<DropDownDto> getUomCombo(CommonFilterDto commonFilterDto)
-    {
+    public List<DropDownDto> getETTradeComboList(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("ENT_TL_TRGCALFUNCTION");
+        comboFilter.setIdField("ETFN_KEYID");
+        comboFilter.setNameField("ETFN_NAME");
+        comboFilter.setId(commonFilterDto.getComboKey());
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    @Override
+    public List<DropDownDto> getFacultyComboList(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setIdField("EMPID");
+        comboFilter.setNameField("EMPROLE");
+        comboFilter.setTableName("ENT_VW_FACULTYMST_NEW");
+
+        String sectId = commonFilterDto.getSectionId();
+        String flId = commonFilterDto.getFlId();
+        String locnid = commonFilterDto.getLocationId();
+        String facultyFilterType = "Y".equals(commonFilterDto.getFacultyOthers()) ? "other" : "dmt";
+
+        StringBuilder sb = new StringBuilder();
+
+        String resolvedSectId = null;
+        if (ValidationUtil.isValidKeyId(sectId)) {
+            resolvedSectId = sectId;
+        } else if (ValidationUtil.isValidKeyId(flId)) {
+            resolvedSectId = repository.resolveSectId(flId);
+            logger.info("flId {} resolved to sectId {}", flId, resolvedSectId);
+        }
+
+        if (ValidationUtil.isValidKeyId(resolvedSectId)) {
+            if ("other".equals(facultyFilterType)) {
+                sb.append(" AND faculty_sect_keyid IS NOT NULL");
+                sb.append(" AND faculty_sect_keyid <> ?");
+                sb.append(" AND emp_sect_keyid <> ?");
+                params.add(resolvedSectId);
+                params.add(resolvedSectId);
+                if (ValidationUtil.isValidKeyId(locnid)) {
+                    sb.append(" AND locn_keyid = ?");
+                    params.add(locnid);
+                }
+            } else {
+                sb.append(" AND (");
+                sb.append("   faculty_sect_keyid = ?");
+                sb.append("   OR emp_sect_keyid = ?");
+                sb.append("   OR (faculty_sect_keyid IS NULL");
+                params.add(resolvedSectId);
+                params.add(resolvedSectId);
+                if (ValidationUtil.isValidKeyId(locnid)) {
+                    sb.append("       AND locn_keyid = ?");
+                    params.add(locnid);
+                }
+                sb.append("   )");
+                sb.append(" )");
+            }
+        } else if (ValidationUtil.isValidKeyId(locnid)) {
+            sb.append(" AND locn_keyid = ?");
+            params.add(locnid);
+        }
+
+        comboFilter.setCondSql(sb.toString());
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    @Override
+    public List<DropDownDto> getTopicComboList(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setIdField("TOPI_KEYID");
+        comboFilter.setNameField("TOPI_NAME");
+        comboFilter.setTableName("ENT_TL_TOPICMST");
+
+        StringBuilder sb = new StringBuilder();
+
+        if (ValidationUtil.isValidKeyId(commonFilterDto.getRoleId())) {
+            logger.info("Role is {}", commonFilterDto.getRoleId());
+            sb.append(
+                    " AND TOPI_KEYID IN (SELECT TMTM_TOPI_KEYID FROM ENT_TL_UNIQPOSTOPIC_LINKMST WHERE TMTM_ROLE_KEYID = ?)");
+            params.add(commonFilterDto.getRoleId());
+        }
+
+        if (ValidationUtil.isValidKeyId(commonFilterDto.getTopicType())) {
+            logger.info("Related is {}", commonFilterDto.getTopicType());
+            sb.append(" AND TOPI_RELATEDTO = ?");
+            params.add(commonFilterDto.getTopicType());
+        }
+
+        comboFilter.setCondSql(sb.toString());
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    @Override
+    public List<DropDownDto> getRoleComboList(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setIdField("ROLE_KEYID");
+        comboFilter.setNameField("ROLE_NAME");
+
+        logger.info("{} commonfiltertopic", commonFilterDto.getFlId());
+
+        StringBuilder keyIdCnd = new StringBuilder();
+        List<Object> keyIdParams = new ArrayList<>();
+
+        if (ValidationUtil.isValidKeyId(commonFilterDto.getRoleId())) {
+            keyIdCnd.append(" AND ROLE_KEYID = ? ");
+            keyIdParams.add(commonFilterDto.getRoleId());
+        }
+
+        if (ValidationUtil.isValidKeyId(commonFilterDto.getTopicId())) {
+            keyIdCnd.append(" AND ROLE_KEYID IN ( ")
+                    .append(" SELECT TMTM_ROLE_KEYID ")
+                    .append(" FROM ENT_TL_UNIQPOSTOPIC_LINKMST ")
+                    .append(" WHERE TMTM_TOPI_KEYID = ? ")
+                    .append(")");
+            keyIdParams.add(commonFilterDto.getTopicId());
+        }
+
+        if (ValidationUtil.isValidKeyId(commonFilterDto.getFlId())) {
+
+            comboFilter.setNameField("ROLE_NAME || '-' || FNLN_DISPLAYCODE");
+
+            StringBuilder cnd = new StringBuilder(" AND ROLE_FLID = FLID ");
+
+            String type = ValidationUtil.isValidKeyId(commonFilterDto.getChildFlids())
+                    ? commonFilterDto.getChildFlids()
+                    : "Y";
+
+            if ("Y".equals(type)) {
+                cnd.append(" AND POSITION(? IN (PARENTFLIDS || FLID)) > 0 ");
+                params.add(commonFilterDto.getFlId());
+            } else {
+                cnd.append(" AND FLID = ? ");
+                params.add(commonFilterDto.getFlId());
+            }
+
+            params.addAll(keyIdParams);
+            cnd.append(keyIdCnd);
+
+            comboFilter.setCondSql(cnd.toString());
+            comboFilter.setTableName("ent_vw_rolemst");
+
+        } else {
+            params.addAll(keyIdParams);
+            comboFilter.setCondSql(keyIdCnd.toString());
+            comboFilter.setTableName("GEN_TL_ROLEMST");
+        }
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    @Override
+    public List<DropDownDto> getVenueComboList(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setIdField("VENU_KEYID");
+        comboFilter.setCodeField("VENU_CODE");
+        comboFilter.setNameField("VENU_NAME");
+        comboFilter.setTableName("ENT_TL_VENUEMST");
+
+        if (ValidationUtil.isValidKeyId(commonFilterDto.getFlId())) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(" AND VENU_FLID IN (SELECT FNLN_KEYID FROM GEN_TL_FUNCTIONALLOCN WHERE ");
+            sb.append(" FNLN_ORIGINALID IN (SELECT SUBSTR(FNLN_ELEMENTID,12,10) ");
+            sb.append(" FROM GEN_VW_FNLN WHERE FNLN_KEYID = ?) ) ");
+            comboFilter.setCondSql(sb.toString());
+            params.add(commonFilterDto.getFlId());
+        }
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    @Override
+    public List<DropDownDto> getDeliveryModeCombo(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setNameField("TMOD_NAME");
+        comboFilter.setCodeField("TMOD_CODE");
+        comboFilter.setIdField("TMOD_KEYID");
+        comboFilter.setCondSql(" AND TMOD_ACTIVE = 'Y' ");
+        comboFilter.setTableName("ENT_TL_DELIVERYMODEMST");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    @Override
+    public List<DropDownDto> getCategoryComboList(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setIdField("TCAT_KEYID");
+        comboFilter.setNameField("TCAT_NAME");
+        comboFilter.setCondSql(" AND TCAT_ACTIVE = 'Y' ");
+        comboFilter.setTableName("ENT_TL_TOPICCATEGORYMST");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    @Override
+    public List<DropDownDto> getGridTopicComboList(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setIdField("TOPI_KEYID");
+        comboFilter.setNameField("TOPI_NAME");
+        comboFilter.setTableName("ENT_TL_TOPICMST");
+
+        StringBuilder sb = new StringBuilder();
+
+        if (ValidationUtil.isValidKeyId(commonFilterDto.getRoleId())) {
+            logger.info("Range is {}", commonFilterDto.getRoleId());
+            sb.append(
+                    " AND TOPI_KEYID IN (SELECT TMTM_TOPI_KEYID FROM ENT_TL_UNIQPOSTOPIC_LINKMST WHERE TMTM_ROLE_KEYID = ?)");
+            params.add(commonFilterDto.getRoleId());
+        }
+
+        if (ValidationUtil.isValidKeyId(commonFilterDto.getFlId())) {
+            logger.info("Flid is {}", commonFilterDto.getFlId());
+            sb.append(" AND TOPI_LOCATIONID = ?");
+            params.add(commonFilterDto.getFlId());
+        }
+
+        if (ValidationUtil.isValidKeyId(commonFilterDto.getTopicType())) {
+            logger.info("Related is {}", commonFilterDto.getTopicType());
+            sb.append(" AND TOPI_RELATEDTO = ?");
+            params.add(commonFilterDto.getTopicType());
+        }
+
+        comboFilter.setCondSql(sb.toString());
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    @Override
+    public List<DropDownDto> getTradeComboList(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setIdField("TRDM_KEYID");
+        comboFilter.setNameField("TRDM_NAME");
+        comboFilter.setTableName("GEN_TL_TRADEMST");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    // ****************SkillIndex****************
+    @Override
+    public List<DropDownDto> getEmpTypeCombo(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setCodeField("ETPM_CODE");
+        comboFilter.setIdField("ETPM_KEYID");
+        comboFilter.setNameField("ETPM_NAME");
+        comboFilter.setTableName("GEN_TL_EMPTYPE_MST");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+    // **************KnowWhy*************
+
+    @Override
+    public List<DropDownDto> getDefactPhenamenComboList(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setIdField("QPHM_KEYID");
+        comboFilter.setNameField("QPHM_NAME");
+        comboFilter.setTableName("QTM_TL_PHENOMENAMST");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    // *****Kaizen*************
+    @Override
+    public List<DropDownDto> getKznThemeCategory(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setNameField("KZCT_NAME");
+        comboFilter.setIdField("KZCT_KEYID");
+        comboFilter.setTableName("KZN_TL_CATEGORYTHMMST");
+        comboFilter.setCondSql(" AND KZCT_ACTIVE = 'Y' ");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+    // @Override
+    // public List<DropDownDto> getKznThemeCategory(CommonFilterDto commonFilterDto)
+    // {
+    // ComboFilterDto comboFilter = new ComboFilterDto();
+    // List<Object> params = new ArrayList<>();
+
+    // comboFilter.setNameField("KZCT_NAME");
+    // comboFilter.setIdField("KZCT_KEYID || '~' || COALESCE(KZCT_CODE,'')");
+    // comboFilter.setTableName("KZN_TL_CATEGORYTHMMST");
+    // comboFilter.setCondSql(" AND KZCT_ACTIVE = 'Y' ");
+
+    // return repository.fillComboValues(comboFilter, params.toArray());
+    // }
+
+    @Override
+    public List<DropDownDto> getKznNoName(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setIdField("KZPM_PROJECTNO");
+        comboFilter.setCodeField("KZPM_PROJECTNO");
+        comboFilter.setNameField("KZPM_PROJECTNAME");
+        comboFilter.setTableName("KZN_TL_PROJECTCREATIONMST");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    @Override
+    public List<DropDownDto> getWhyWhyCombo(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setCodeField("WWMS_KEYID");
+        comboFilter.setIdField("WWMS_KEYID");
+
+        if (ValidationUtil.isValidKeyId(commonFilterDto.getWwmsKeyid())) {
+            comboFilter.setCondSql(" AND WWMS_REFDOCNO = ? AND WWMS_REFDOCTYPE = 'KZN' ");
+            params.add(commonFilterDto.getWwmsKeyid());
+        }
+
+        comboFilter.setTableName("BDM_TL_WHYWHYMST");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    @Override
+    public List<DropDownDto> getKpiCombo(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        logger.info("KPI Flid {}", commonFilterDto.getFlId());
+
+        comboFilter.setNameField("KINK_INDICATORNAME");
+        comboFilter.setIdField("KINK_KEYID");
+        comboFilter.setTableName("KPI_TL_INDICATOR, KPI_TL_INDICATOR_DEPT_LINK");
+        comboFilter.setCondSql(" AND KIDL_INDICATORID = KINK_KEYID AND KIDL_DEPTID = ? ");
+        params.add(commonFilterDto.getFlId());
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    @Override
+    public List<DropDownDto> getMould(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setCodeField("MLDM_DESCRIPTION");
+        comboFilter.setIdField("MLDM_MOULDID");
+        comboFilter.setTableName("GEN_TL_MOULDMST");
+
+        if (ValidationUtil.isValidKeyId(commonFilterDto.getMchId())) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(" AND MLDM_MOULDID IN (SELECT MMLK_MOULDID FROM GEN_TL_MOULDMACHINELINK");
+            sb.append(" WHERE MMLK_MACHINEID = ?)");
+            comboFilter.setCondSql(sb.toString());
+            params.add(commonFilterDto.getMchId());
+        }
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    @Override
+    public List<DropDownDto> getMocItemComboList(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setIdField("MOC_ITM_KEYID");
+        comboFilter.setNameField("MOC_ITM_ITEM");
+        comboFilter.setTableName("MOC_TL_ITEM");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    // --------------------------------------------GOPI------------------------------------
+    // ---- Why Why Analysis: Pillar ----
+    @Override
+    public List<DropDownDto> getWhyWhyPillarCombo(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("GEN_TL_TPMPILLARMST");
+        comboFilter.setIdField("TPMP_KEYID");
+        comboFilter.setNameField("TRIM(TPMP_NAME)");
+        comboFilter.setCodeField("TRIM(TPMP_CODE)");
+        comboFilter.setOrderByField("LABEL");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    // ---- OPL: Process ----
+    @Override
+    public List<DropDownDto> getOplProcessCombo(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("QTM_TL_PROCESSMST");
+        comboFilter.setIdField("QPOM_KEYID");
+        comboFilter.setNameField("TRIM(QPOM_NAME)");
+        comboFilter.setOrderByField("LABEL");
+
+        if (commonFilterDto != null && ValidationUtil.isValidKeyId(commonFilterDto.getFlId())) {
+            comboFilter.setCondSql("""
+                       AND QPOM_FLID IN (
+                           SELECT FLID FROM GEN_MV_FLIDHIERARCHY
+                           WHERE POSITION(? IN (COALESCE(PARENTFLIDS,'') || '-' || COALESCE(FLID,''))) > 0
+                       )
+                    """);
+            params.add(commonFilterDto.getFlId());
+        }
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    // ---- Field Audit Sheet: Service Provider ----
+    @Override
+    public List<DropDownDto> getFieldAuditServiceProviderCombo(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("ADM_TL_SERVICEPROVIDERMST");
+        comboFilter.setIdField("ASPM_KEYID");
+        comboFilter.setNameField("TRIM(ASPM_NAME)");
+        comboFilter.setOrderByField("LABEL");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    // ---- Visual SOP: Maintenance Section (reuses Trade master) ----
+    @Override
+    public List<DropDownDto> getVisualSopMaintSectionCombo(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("GEN_TL_TRADEMST");
+        comboFilter.setIdField("TRDM_KEYID");
+        comboFilter.setNameField("TRIM(TRDM_NAME)");
+        comboFilter.setCodeField("TRIM(TRDM_CODE)");
+        comboFilter.setOrderByField("LABEL");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    // ---- Critical Process: Unit of Measurement ----
+    @Override
+    public List<DropDownDto> getUomCombo(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -2026,8 +2020,7 @@ public List<DropDownDto> getVisualSopMaintSectionCombo(CommonFilterDto commonFil
 
     // ---- Process FMEA: Sub Process ----
     @Override
-    public List<DropDownDto> getFmeaSubProcessCombo(CommonFilterDto commonFilterDto)
-    {
+    public List<DropDownDto> getFmeaSubProcessCombo(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -2036,179 +2029,173 @@ public List<DropDownDto> getVisualSopMaintSectionCombo(CommonFilterDto commonFil
         comboFilter.setNameField("TRIM(SUBP_NAME)");
         comboFilter.setOrderByField("LABEL");
 
-        if (commonFilterDto != null && ValidationUtil.isValidKeyId(commonFilterDto.getProcessId()))
-        {
+        if (commonFilterDto != null && ValidationUtil.isValidKeyId(commonFilterDto.getProcessId())) {
             comboFilter.setCondSql("""
-                                    AND SUBP_PROCESSID = ?
-                                 """);
+                       AND SUBP_PROCESSID = ?
+                    """);
             params.add(commonFilterDto.getProcessId());
         }
 
         return repository.fillComboValues(comboFilter, params.toArray());
     }
+
     // ---- FMEA: Equipment Area (sub-equipment section) ----
-@Override
-public List<DropDownDto> getFmeaEquipmentAreaCombo(CommonFilterDto commonFilterDto)
-{
-    ComboFilterDto comboFilter = new ComboFilterDto();
-    List<Object> params = new ArrayList<>();
+    @Override
+    public List<DropDownDto> getFmeaEquipmentAreaCombo(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
 
-    comboFilter.setTableName("GEN_TL_EQUIP_SECTIONMST");
-    comboFilter.setIdField("ESEC_KEYID");
-    comboFilter.setNameField("TRIM(ESEC_NAME)");
-    comboFilter.setCodeField("TRIM(ESEC_CODE)");
-    comboFilter.setOrderByField("LABEL");
+        comboFilter.setTableName("GEN_TL_EQUIP_SECTIONMST");
+        comboFilter.setIdField("ESEC_KEYID");
+        comboFilter.setNameField("TRIM(ESEC_NAME)");
+        comboFilter.setCodeField("TRIM(ESEC_CODE)");
+        comboFilter.setOrderByField("LABEL");
 
-    if (commonFilterDto != null && ValidationUtil.isValidKeyId(commonFilterDto.getFlId())) {
-        comboFilter.setCondSql("""
-                                AND ESEC_PARENTFLID = ?
-                             """);
-        params.add(commonFilterDto.getFlId());
-    } else if (commonFilterDto != null && ValidationUtil.isValidKeyId(commonFilterDto.getCellId())) {
-        comboFilter.setCondSql("""
-                                AND ESEC_PARENTFLID IN (
-                                    SELECT FLID FROM GEN_MV_FLIDHIERARCHY WHERE FNLN_ORIGINALID = ?
-                                )
-                             """);
-        params.add(commonFilterDto.getCellId());
-    }
-
-    return repository.fillComboValues(comboFilter, params.toArray());
-}
-// ---- Upstream Defect: Defect (Phenomena) ----
-@Override
-public List<DropDownDto> getUpstreamDefectCombo(CommonFilterDto commonFilterDto)
-{
-    ComboFilterDto comboFilter = new ComboFilterDto();
-    List<Object> params = new ArrayList<>();
-
-    comboFilter.setTableName("QTM_TL_PHENOMENAMST");
-    comboFilter.setIdField("QPHM_KEYID");
-    comboFilter.setNameField("TRIM(QPHM_NAME)");
-    comboFilter.setOrderByField("LABEL");
-
-    String sectionId = commonFilterDto != null ? commonFilterDto.getSectionId() : null;
-    String defectMode = commonFilterDto != null ? commonFilterDto.getDefectMode() : null;
-
-    if ("OTHERS".equals(defectMode)) {
-        comboFilter.setCondSql("""
-                                AND QPHM_KEYID NOT IN (
-                                    SELECT PHNM_QPHM_KEYID FROM QTM_TL_PHENOMENA_MAPPING
-                                    WHERE PHNM_ACTIVE = 'Y' AND PHNM_SECT_FLID = ?
-                                )
-                             """);
-    } else {
-        comboFilter.setCondSql("""
-                                AND QPHM_KEYID IN (
-                                    SELECT PHNM_QPHM_KEYID FROM QTM_TL_PHENOMENA_MAPPING
-                                    WHERE PHNM_ACTIVE = 'Y' AND PHNM_SECT_FLID = ?
-                                )
-                             """);
-    }
-    params.add(sectionId);
-
-    return repository.fillComboValues(comboFilter, params.toArray());
-}
-    
-// ---- Complaint Gallery: Customer Name ----
-@Override
-public List<DropDownDto> getComplaintGalleryCustomerCombo(CommonFilterDto commonFilterDto)
-{
-    ComboFilterDto comboFilter = new ComboFilterDto();
-    List<Object> params = new ArrayList<>();
-
-    comboFilter.setTableName("GEN_TL_PARTNORMST");
-    comboFilter.setIdField("PNOR_KEYID");
-    comboFilter.setNameField("TRIM(PNOR_NAME)");
-    comboFilter.setOrderByField("LABEL");
-
-    return repository.fillComboValues(comboFilter, params.toArray());
-}
-
-// ---- Complaint Gallery: Grade Specification ----
-// ---- Complaint Gallery: Grade Specification ----
-@Override
-public List<DropDownDto> getComplaintGalleryGradeSpecCombo(CommonFilterDto commonFilterDto)
-{
-    ComboFilterDto comboFilter = new ComboFilterDto();
-    List<Object> params = new ArrayList<>();
-
-    comboFilter.setTableName("PCS_TL_GRADESPECMST");
-    comboFilter.setIdField("GSPC_KEYID");
-    comboFilter.setNameField("TRIM(GSPC_NAME)");
-    comboFilter.setCodeField("TRIM(GSPC_CODE)");
-    comboFilter.setOrderByField("LABEL");
-
-    if (commonFilterDto != null && ValidationUtil.isValidKeyId(commonFilterDto.getFlId())) {
-
-        boolean isOthers = "OTHERS".equals(commonFilterDto.getGradeMode());
-
-        if (isOthers) {
+        if (commonFilterDto != null && ValidationUtil.isValidKeyId(commonFilterDto.getFlId())) {
             comboFilter.setCondSql("""
-                                    AND GSPC_FLID IN (
-                                        SELECT FNLN_KEYID FROM GEN_TL_FUNCTIONALLOCN
-                                        WHERE FNLN_ORIGINALID IN (
-                                            SELECT SUBSTR(FNLN_ELEMENTID,12,10)
-                                            FROM GEN_VW_FNLN WHERE FNLN_KEYID = ?
-                                        )
-                                    )
-                                 """);
+                       AND ESEC_PARENTFLID = ?
+                    """);
+            params.add(commonFilterDto.getFlId());
+        } else if (commonFilterDto != null && ValidationUtil.isValidKeyId(commonFilterDto.getCellId())) {
+            comboFilter.setCondSql("""
+                       AND ESEC_PARENTFLID IN (
+                           SELECT FLID FROM GEN_MV_FLIDHIERARCHY WHERE FNLN_ORIGINALID = ?
+                       )
+                    """);
+            params.add(commonFilterDto.getCellId());
+        }
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    // ---- Upstream Defect: Defect (Phenomena) ----
+    @Override
+    public List<DropDownDto> getUpstreamDefectCombo(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("QTM_TL_PHENOMENAMST");
+        comboFilter.setIdField("QPHM_KEYID");
+        comboFilter.setNameField("TRIM(QPHM_NAME)");
+        comboFilter.setOrderByField("LABEL");
+
+        String sectionId = commonFilterDto != null ? commonFilterDto.getSectionId() : null;
+        String defectMode = commonFilterDto != null ? commonFilterDto.getDefectMode() : null;
+
+        if ("OTHERS".equals(defectMode)) {
+            comboFilter.setCondSql("""
+                       AND QPHM_KEYID NOT IN (
+                           SELECT PHNM_QPHM_KEYID FROM QTM_TL_PHENOMENA_MAPPING
+                           WHERE PHNM_ACTIVE = 'Y' AND PHNM_SECT_FLID = ?
+                       )
+                    """);
         } else {
             comboFilter.setCondSql("""
-                                    AND GSPC_FLID = ?
-                                 """);
+                       AND QPHM_KEYID IN (
+                           SELECT PHNM_QPHM_KEYID FROM QTM_TL_PHENOMENA_MAPPING
+                           WHERE PHNM_ACTIVE = 'Y' AND PHNM_SECT_FLID = ?
+                       )
+                    """);
         }
-        params.add(commonFilterDto.getFlId());
+        params.add(sectionId);
+
+        return repository.fillComboValues(comboFilter, params.toArray());
     }
 
-    return repository.fillComboValues(comboFilter, params.toArray());
-}
+    // ---- Complaint Gallery: Customer Name ----
+    @Override
+    public List<DropDownDto> getComplaintGalleryCustomerCombo(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
 
-// ---- Complaint Gallery: Defect Phenomena ----
-// ---- Complaint Gallery: Defect Phenomena (fresh) ----
-@Override
-public List<DropDownDto> getComplaintGalleryDefectPhenomenaCombo(CommonFilterDto commonFilterDto)
-{
-    ComboFilterDto comboFilter = new ComboFilterDto();
-    List<Object> params = new ArrayList<>();
+        comboFilter.setTableName("GEN_TL_PARTNORMST");
+        comboFilter.setIdField("PNOR_KEYID");
+        comboFilter.setNameField("TRIM(PNOR_NAME)");
+        comboFilter.setOrderByField("LABEL");
 
-    comboFilter.setTableName("QTM_TL_PHENOMENAMST");
-    comboFilter.setIdField("QPHM_KEYID");
-    comboFilter.setNameField("TRIM(QPHM_NAME)");
-    comboFilter.setOrderByField("LABEL");
-
-    if (commonFilterDto != null && ValidationUtil.isValidKeyId(commonFilterDto.getSectionId())) {
-
-        boolean isOthers = "OTHERS".equals(commonFilterDto.getDefectMode());
-
-        if (isOthers) {
-            comboFilter.setCondSql("""
-                                    AND QPHM_KEYID NOT IN (
-                                        SELECT PHNM_QPHM_KEYID FROM QTM_TL_PHENOMENA_MAPPING
-                                        WHERE PHNM_ACTIVE = 'Y' AND PHNM_SECT_FLID = ?
-                                    )
-                                 """);
-        } else {
-            comboFilter.setCondSql("""
-                                    AND QPHM_KEYID IN (
-                                        SELECT PHNM_QPHM_KEYID FROM QTM_TL_PHENOMENA_MAPPING
-                                        WHERE PHNM_ACTIVE = 'Y' AND PHNM_SECT_FLID = ?
-                                    )
-                                 """);
-        }
-        params.add(commonFilterDto.getSectionId());
+        return repository.fillComboValues(comboFilter, params.toArray());
     }
 
-    return repository.fillComboValues(comboFilter, params.toArray());
-   
+    // ---- Complaint Gallery: Grade Specification ----
+    // ---- Complaint Gallery: Grade Specification ----
+    @Override
+    public List<DropDownDto> getComplaintGalleryGradeSpecCombo(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
 
-    
-}
- //**************************************PRIYANKA**************************************
- //****************************serviceimpl***********************************
- @Override
-    public List<DropDownDto> getCheckTypeCombo(CommonFilterDto commonFilterDto)
-    {
+        comboFilter.setTableName("PCS_TL_GRADESPECMST");
+        comboFilter.setIdField("GSPC_KEYID");
+        comboFilter.setNameField("TRIM(GSPC_NAME)");
+        comboFilter.setCodeField("TRIM(GSPC_CODE)");
+        comboFilter.setOrderByField("LABEL");
+
+        if (commonFilterDto != null && ValidationUtil.isValidKeyId(commonFilterDto.getFlId())) {
+
+            boolean isOthers = "OTHERS".equals(commonFilterDto.getGradeMode());
+
+            if (isOthers) {
+                comboFilter.setCondSql("""
+                           AND GSPC_FLID IN (
+                               SELECT FNLN_KEYID FROM GEN_TL_FUNCTIONALLOCN
+                               WHERE FNLN_ORIGINALID IN (
+                                   SELECT SUBSTR(FNLN_ELEMENTID,12,10)
+                                   FROM GEN_VW_FNLN WHERE FNLN_KEYID = ?
+                               )
+                           )
+                        """);
+            } else {
+                comboFilter.setCondSql("""
+                           AND GSPC_FLID = ?
+                        """);
+            }
+            params.add(commonFilterDto.getFlId());
+        }
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    // ---- Complaint Gallery: Defect Phenomena ----
+    // ---- Complaint Gallery: Defect Phenomena (fresh) ----
+    @Override
+    public List<DropDownDto> getComplaintGalleryDefectPhenomenaCombo(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("QTM_TL_PHENOMENAMST");
+        comboFilter.setIdField("QPHM_KEYID");
+        comboFilter.setNameField("TRIM(QPHM_NAME)");
+        comboFilter.setOrderByField("LABEL");
+
+        if (commonFilterDto != null && ValidationUtil.isValidKeyId(commonFilterDto.getSectionId())) {
+
+            boolean isOthers = "OTHERS".equals(commonFilterDto.getDefectMode());
+
+            if (isOthers) {
+                comboFilter.setCondSql("""
+                           AND QPHM_KEYID NOT IN (
+                               SELECT PHNM_QPHM_KEYID FROM QTM_TL_PHENOMENA_MAPPING
+                               WHERE PHNM_ACTIVE = 'Y' AND PHNM_SECT_FLID = ?
+                           )
+                        """);
+            } else {
+                comboFilter.setCondSql("""
+                           AND QPHM_KEYID IN (
+                               SELECT PHNM_QPHM_KEYID FROM QTM_TL_PHENOMENA_MAPPING
+                               WHERE PHNM_ACTIVE = 'Y' AND PHNM_SECT_FLID = ?
+                           )
+                        """);
+            }
+            params.add(commonFilterDto.getSectionId());
+        }
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+
+    }
+
+    // **************************************PRIYANKA**************************************
+    // ****************************serviceimpl***********************************
+    @Override
+    public List<DropDownDto> getCheckTypeCombo(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -2218,10 +2205,11 @@ public List<DropDownDto> getComplaintGalleryDefectPhenomenaCombo(CommonFilterDto
         comboFilter.setOrderByField("LABEL");
 
         comboFilter.setCondSql("""
-                            AND CHEK_ACTIVE = 'Y'
-                         """);
+                   AND CHEK_ACTIVE = 'Y'
+                """);
 
-        // If this combo needs to pre-select/exclude an existing value (like others do with comboKey)
+        // If this combo needs to pre-select/exclude an existing value (like others do
+        // with comboKey)
         if (commonFilterDto != null && ValidationUtil.isValidKeyId(commonFilterDto.getComboKey())) {
             comboFilter.setId(commonFilterDto.getComboKey());
         }
@@ -2230,79 +2218,78 @@ public List<DropDownDto> getComplaintGalleryDefectPhenomenaCombo(CommonFilterDto
     }
 
     @Override
-public List<DropDownDto> getSpareComboList(CommonFilterDto commonFilterDto)
-{
-    ComboFilterDto comboFilter = new ComboFilterDto();
-    List<Object> params = new ArrayList<>();
+    public List<DropDownDto> getSpareComboList(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
 
-    comboFilter.setTableName("GEN_TL_SPARESMST");
-    comboFilter.setIdField("SPRM_KEYID");
-    comboFilter.setCodeField("SPRM_PARTNO");
-    comboFilter.setNameField("SPRM_PARTNAME");
-    comboFilter.setOrderByField("LABEL");
+        comboFilter.setTableName("GEN_TL_SPARESMST");
+        comboFilter.setIdField("SPRM_KEYID");
+        comboFilter.setCodeField("SPRM_PARTNO");
+        comboFilter.setNameField("SPRM_PARTNAME");
+        comboFilter.setOrderByField("LABEL");
 
-    String assmId = (commonFilterDto != null) ? commonFilterDto.getAssmId() : null;
-    String machineId = (commonFilterDto != null) ? commonFilterDto.getMachineId() : null;
+        String assmId = (commonFilterDto != null) ? commonFilterDto.getAssmId() : null;
+        String machineId = (commonFilterDto != null) ? commonFilterDto.getMachineId() : null;
 
-    StringBuilder condSql = new StringBuilder();
+        StringBuilder condSql = new StringBuilder();
 
-    if (ValidationUtil.isValidKeyId(assmId)) {
-        condSql.append("""
-                AND SPRM_KEYID IN (
-                        SELECT FNLN_ORIGINALID
-                        FROM GEN_TL_FUNCTIONALLOCN
-                        WHERE POSITION(? IN FNLN_ELEMENTID) > 0
-                        AND FNLN_ELEMENTTYPE = 'SPR'
-                )
-                """);
-        params.add(assmId);
+        if (ValidationUtil.isValidKeyId(assmId)) {
+            condSql.append("""
+                    AND SPRM_KEYID IN (
+                            SELECT FNLN_ORIGINALID
+                            FROM GEN_TL_FUNCTIONALLOCN
+                            WHERE POSITION(? IN FNLN_ELEMENTID) > 0
+                            AND FNLN_ELEMENTTYPE = 'SPR'
+                    )
+                    """);
+            params.add(assmId);
+        }
+
+        if (ValidationUtil.isValidKeyId(machineId)) {
+            condSql.append("""
+                    AND SPRM_KEYID IN (
+                            SELECT FNLN_ORIGINALID
+                            FROM GEN_TL_FUNCTIONALLOCN
+                            WHERE POSITION(? IN FNLN_ELEMENTID) > 0
+                            AND FNLN_ELEMENTTYPE = 'SPR'
+                    )
+                    """);
+            params.add(machineId);
+        }
+
+        if (condSql.length() > 0) {
+            comboFilter.setCondSql(condSql.toString());
+        }
+
+        if (commonFilterDto != null && ValidationUtil.isValidKeyId(commonFilterDto.getComboKey())) {
+            comboFilter.setId(commonFilterDto.getComboKey());
+        }
+
+        return repository.fillComboValues(comboFilter, params.toArray());
     }
 
-    if (ValidationUtil.isValidKeyId(machineId)) {
-        condSql.append("""
-                AND SPRM_KEYID IN (
-                        SELECT FNLN_ORIGINALID
-                        FROM GEN_TL_FUNCTIONALLOCN
-                        WHERE POSITION(? IN FNLN_ELEMENTID) > 0
-                        AND FNLN_ELEMENTTYPE = 'SPR'
-                )
-                """);
-        params.add(machineId);
+    @Override
+    public List<DropDownDto> getCheckingToolCombo(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("PLM_TL_CHECKINGTOOL");
+        comboFilter.setIdField("CHKT_KEYID");
+        comboFilter.setCodeField("CHKT_CODE");
+        comboFilter.setNameField("CHKT_NAME");
+        comboFilter.setOrderByField("LABEL");
+
+        if (commonFilterDto != null && ValidationUtil.isValidKeyId(commonFilterDto.getComboKey())) {
+            comboFilter.setId(commonFilterDto.getComboKey());
+        }
+
+        return repository.fillComboValues(comboFilter, params.toArray());
     }
 
-    if (condSql.length() > 0) {
-        comboFilter.setCondSql(condSql.toString());
-    }
-
-    if (commonFilterDto != null && ValidationUtil.isValidKeyId(commonFilterDto.getComboKey())) {
-        comboFilter.setId(commonFilterDto.getComboKey());
-    }
-
-    return repository.fillComboValues(comboFilter, params.toArray());
-}
-
-@Override
-public List<DropDownDto> getCheckingToolCombo(CommonFilterDto commonFilterDto)
-{
-    ComboFilterDto comboFilter = new ComboFilterDto();
-    List<Object> params = new ArrayList<>();
-
-    comboFilter.setTableName("PLM_TL_CHECKINGTOOL");
-    comboFilter.setIdField("CHKT_KEYID");
-    comboFilter.setCodeField("CHKT_CODE");
-    comboFilter.setNameField("CHKT_NAME");
-    comboFilter.setOrderByField("LABEL");
-
-    if (commonFilterDto != null && ValidationUtil.isValidKeyId(commonFilterDto.getComboKey())) {
-        comboFilter.setId(commonFilterDto.getComboKey());
-    }
-
-    return repository.fillComboValues(comboFilter, params.toArray());
-}
-//********************************************KPI************************************ */
-@Override
-    public List<DropDownDto> getParentComboList(CommonFilterDto commonFilterDto)
-    {
+    // ********************************************KPI************************************
+    // */
+    @Override
+    public List<DropDownDto> getParentComboList(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -2312,7 +2299,6 @@ public List<DropDownDto> getCheckingToolCombo(CommonFilterDto commonFilterDto)
         comboFilter.setOrderByField("LABEL");
 
         StringBuilder condSql = new StringBuilder(" AND KINK_KEYID = KINK_PARENTID ");
-        
 
         String pillarId = (commonFilterDto != null) ? commonFilterDto.getPillarid() : null;
         String locationId = (commonFilterDto != null) ? commonFilterDto.getLossId() : null;
@@ -2335,11 +2321,11 @@ public List<DropDownDto> getCheckingToolCombo(CommonFilterDto commonFilterDto)
 
         return repository.fillComboValues(comboFilter, params.toArray());
     }
-//***********************************************************************
-//*************************************MOM***********************************
-@Override
-     public List<DropDownDto> getPillarGroupCombo(CommonFilterDto commonFilterDto)
-     {
+
+    // ***********************************************************************
+    // *************************************MOM***********************************
+    @Override
+    public List<DropDownDto> getPillarGroupCombo(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -2354,7 +2340,8 @@ public List<DropDownDto> getCheckingToolCombo(CommonFilterDto commonFilterDto)
 
         if (pillarid != null) {
             condSql.append(" AND MGRM_PILLARID = ? ");
-            condSql.append(" AND POSITION((SELECT FNLN_KEYID FROM gen_tl_functionallocn WHERE FNLN_ORIGINALID = ?) IN (PARENTFLIDS || FLID)) > 0 ");
+            condSql.append(
+                    " AND POSITION((SELECT FNLN_KEYID FROM gen_tl_functionallocn WHERE FNLN_ORIGINALID = ?) IN (PARENTFLIDS || FLID)) > 0 ");
             params.add(pillarid);
             params.add(locationId);
         }
@@ -2362,11 +2349,10 @@ public List<DropDownDto> getCheckingToolCombo(CommonFilterDto commonFilterDto)
         comboFilter.setCondSql(condSql.toString());
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
+    }
 
-     @Override
-     public List<DropDownDto> getMOMRoleComboList(CommonFilterDto commonFilterDto)
-     {
+    @Override
+    public List<DropDownDto> getMOMRoleComboList(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -2379,11 +2365,10 @@ public List<DropDownDto> getCheckingToolCombo(CommonFilterDto commonFilterDto)
         logger.info("flid => {}", commonFilterDto != null ? commonFilterDto.getFlId() : null);
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
+    }
 
-     @Override
-     public List<DropDownDto> getRoleComboListNewMom(CommonFilterDto commonFilterDto)
-     {
+    @Override
+    public List<DropDownDto> getRoleComboListNewMom(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -2396,11 +2381,10 @@ public List<DropDownDto> getCheckingToolCombo(CommonFilterDto commonFilterDto)
         logger.info("flid (new mom) => {}", commonFilterDto != null ? commonFilterDto.getFlId() : null);
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
+    }
 
-     @Override
-     public List<DropDownDto> getRoleBasedEmployee(CommonFilterDto commonFilterDto)
-     {
+    @Override
+    public List<DropDownDto> getRoleBasedEmployee(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -2420,12 +2404,14 @@ public List<DropDownDto> getCheckingToolCombo(CommonFilterDto commonFilterDto)
         condSql.append(" JOIN gen_mv_flidhierarchy h ON h.flid = frt.frt_fnln_keyid WHERE 1=1 ");
 
         if (ValidationUtil.isValidKeyId(othersFlag)) {
-            condSql.append(" AND POSITION((SELECT fnln_keyid FROM gen_tl_functionallocn WHERE fnln_originalid = ?) IN (h.parentflids || '/' || h.flid)) > 0 ");
+            condSql.append(
+                    " AND POSITION((SELECT fnln_keyid FROM gen_tl_functionallocn WHERE fnln_originalid = ?) IN (h.parentflids || '/' || h.flid)) > 0 ");
             params.add(locnid);
         }
 
         if (ValidationUtil.isValidKeyId(flid)) {
-            condSql.append(" AND frt.frt_fnln_keyid IN (SELECT flid FROM gen_mv_flidhierarchy WHERE POSITION(? IN (parentflids || '-' || flid)) > 0) ");
+            condSql.append(
+                    " AND frt.frt_fnln_keyid IN (SELECT flid FROM gen_mv_flidhierarchy WHERE POSITION(? IN (parentflids || '-' || flid)) > 0) ");
             params.add(flid);
         }
 
@@ -2444,11 +2430,11 @@ public List<DropDownDto> getCheckingToolCombo(CommonFilterDto commonFilterDto)
         comboFilter.setCondSql(condSql.toString());
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
-     //************************************equip */
-     @Override
-     public List<DropDownDto> getMachineComboList(CommonFilterDto commonFilterDto)
-     {
+    }
+
+    // ************************************equip */
+    @Override
+    public List<DropDownDto> getMachineComboList(CommonFilterDto commonFilterDto) {
         String keyid = commonFilterDto != null ? commonFilterDto.getKeyid() : null;
         String cellid = commonFilterDto != null ? commonFilterDto.getCellId() : null;
         String flid = commonFilterDto != null ? commonFilterDto.getFlId() : null;
@@ -2477,7 +2463,8 @@ public List<DropDownDto> getCheckingToolCombo(CommonFilterDto commonFilterDto)
         }
 
         if (ValidationUtil.isValidKeyId(flid)) {
-            condSql.append(" AND MCHM_FLID IN (SELECT FLID FROM gen_mv_flidhierarchy WHERE POSITION(? IN (PARENTFLIDS || FLID)) > 0) ");
+            condSql.append(
+                    " AND MCHM_FLID IN (SELECT FLID FROM gen_mv_flidhierarchy WHERE POSITION(? IN (PARENTFLIDS || FLID)) > 0) ");
             params.add(flid);
         }
 
@@ -2492,11 +2479,13 @@ public List<DropDownDto> getCheckingToolCombo(CommonFilterDto commonFilterDto)
         }
 
         if (ValidationUtil.isValidKeyId(circleId)) {
-            condSql.append(" AND MCHM_KEYID IN (SELECT MCLK_MACHINEID FROM GEN_TL_MCHCIRCLELINK WHERE MCLK_ACTIVE = 'Y' AND MCLK_CIRCLEID = ?) ");
+            condSql.append(
+                    " AND MCHM_KEYID IN (SELECT MCLK_MACHINEID FROM GEN_TL_MCHCIRCLELINK WHERE MCLK_ACTIVE = 'Y' AND MCLK_CIRCLEID = ?) ");
             params.add(circleId);
 
             if (ValidationUtil.isValidKeyId(mouldId)) {
-                condSql.append(" AND MCHM_KEYID IN (SELECT MMLK_MACHINEID FROM GEN_TL_MOULDMACHINELINK WHERE MMLK_MOULDID = ?) ");
+                condSql.append(
+                        " AND MCHM_KEYID IN (SELECT MMLK_MACHINEID FROM GEN_TL_MOULDMACHINELINK WHERE MMLK_MOULDID = ?) ");
                 params.add(mouldId);
             }
 
@@ -2506,18 +2495,22 @@ public List<DropDownDto> getCheckingToolCombo(CommonFilterDto commonFilterDto)
             }
 
             if (ValidationUtil.isValidKeyId(eqpSubGrpId)) {
-                condSql.append(" AND MCHM_EQUIPMENTGROUP IN (SELECT EQGM_KEYID FROM EQG_EQPGROUPMST WHERE EQGM_SUBGROUPID = ?) ");
+                condSql.append(
+                        " AND MCHM_EQUIPMENTGROUP IN (SELECT EQGM_KEYID FROM EQG_EQPGROUPMST WHERE EQGM_SUBGROUPID = ?) ");
                 params.add(eqpSubGrpId);
             }
         }
 
         if ("Y".equals(pcsEnabled)) {
-            condSql.append(" AND (MCHM_KEYID IN (SELECT PELC_MACHINEID FROM PCS_TL_ENABLELOSSCAPTURE WHERE PELC_ISPCSENABLED = 'Y') ");
-            condSql.append(" OR MCHM_CELLID IN (SELECT PELC_CELLID FROM PCS_TL_ENABLELOSSCAPTURE WHERE PELC_ISPCSENABLED = 'Y')) ");
+            condSql.append(
+                    " AND (MCHM_KEYID IN (SELECT PELC_MACHINEID FROM PCS_TL_ENABLELOSSCAPTURE WHERE PELC_ISPCSENABLED = 'Y') ");
+            condSql.append(
+                    " OR MCHM_CELLID IN (SELECT PELC_CELLID FROM PCS_TL_ENABLELOSSCAPTURE WHERE PELC_ISPCSENABLED = 'Y')) ");
         }
 
         if (ValidationUtil.isValidKeyId(empch)) {
-            condSql.append(" AND MCHM_KEYID IN (SELECT EFLL_FUNCLOCN FROM GEN_TL_EMPFUNCLOCNLINK WHERE EFLL_FUNCLOCNTYPE = 'MCHM' AND EFLL_EMPLOYEEID = ?) ");
+            condSql.append(
+                    " AND MCHM_KEYID IN (SELECT EFLL_FUNCLOCN FROM GEN_TL_EMPFUNCLOCNLINK WHERE EFLL_FUNCLOCNTYPE = 'MCHM' AND EFLL_EMPLOYEEID = ?) ");
             params.add(empch);
         }
 
@@ -2611,10 +2604,10 @@ public List<DropDownDto> getCheckingToolCombo(CommonFilterDto commonFilterDto)
         result.addAll(repository.fillComboValues(comboFilter, restParams.toArray()));
 
         return result;
-     }
-@Override
-     public List<DropDownDto> getEffectiveComboList(CommonFilterDto commonFilterDto)
-     {
+    }
+
+    @Override
+    public List<DropDownDto> getEffectiveComboList(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -2627,12 +2620,11 @@ public List<DropDownDto> getCheckingToolCombo(CommonFilterDto commonFilterDto)
         // behavior.
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
+    }
 
-     //***********************************************fieldaudit*******************************************
-     @Override
-     public List<DropDownDto> getPPEType(CommonFilterDto commonFilterDto)
-     {
+    // ***********************************************fieldaudit*******************************************
+    @Override
+    public List<DropDownDto> getPPEType(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -2641,12 +2633,11 @@ public List<DropDownDto> getCheckingToolCombo(CommonFilterDto commonFilterDto)
         comboFilter.setNameField("PPEM_NAME");
 
         return repository.fillComboValues(comboFilter, params.toArray());
-     }
+    }
 
     // ***********************************************role************************************
     @Override
-     public List<DropDownDto> getUserRollComboList(CommonFilterDto commonFilterDto)
-     {
+    public List<DropDownDto> getUserRollComboList(CommonFilterDto commonFilterDto) {
         ComboFilterDto comboFilter = new ComboFilterDto();
         List<Object> params = new ArrayList<>();
 
@@ -2673,11 +2664,10 @@ public List<DropDownDto> getCheckingToolCombo(CommonFilterDto commonFilterDto)
         }
 
         return repository.fillComboValuesRole(comboFilter, params.toArray());
-     }
+    }
 
-     @Override
-     public String getCurrentShift(CommonFilterDto commonFilterDto)
-     {
+    @Override
+    public String getCurrentShift(CommonFilterDto commonFilterDto) {
         // NOTE: factId is captured for API-shape compatibility but was never
         // actually used in the legacy SQL — matching that (unused) behavior.
 
@@ -2688,6 +2678,117 @@ public List<DropDownDto> getCheckingToolCombo(CommonFilterDto commonFilterDto)
 
         shiftId = repository.getCurrentShiftOvernightFallback();
         return ValidationUtil.isValidKeyId(shiftId) ? shiftId : "";
-     }
-     
+    }
+
+    // **********************************BreakDown***************************/
+
+    @Override
+    public List<DropDownDto> getAssembly(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        String machineId = commonFilterDto != null ? commonFilterDto.getMachineId() : null;
+
+        /*
+         * Assembly dropdown configuration
+         */
+
+        if (ValidationUtil.isValidKeyId(machineId)) {
+
+            /*
+             * Default (Machine) Assembly - GEN_VW_MCHASMLINK view la irundhu
+             */
+
+            comboFilter.setIdField("ASSEMBLYID");
+
+            comboFilter.setNameField("ASSEMBLYNAME");
+
+            comboFilter.setTableName("GEN_VW_MCHASMLINK");
+
+            StringBuilder condSql = new StringBuilder();
+
+            condSql.append(" AND MACHINEID = ? ");
+            params.add(machineId);
+
+            comboFilter.setCondSql(condSql.toString());
+
+        } else {
+            comboFilter.setTableName("GEN_TL_ASSEMBLYMST");
+
+            comboFilter.setIdField("ASSM_KEYID");
+
+            comboFilter.setNameField("TRIM(ASSM_NAME)");
+
+            comboFilter.setCodeField("TRIM(ASSM_CODE)");
+
+            comboFilter.setOrderByField("LABEL");
+
+            /*
+             * Base active condition
+             */
+
+            comboFilter.setCondSql("""
+
+                    AND ASSM_ACTIVE = 'Y'
+                    """);
+        }
+        List<DropDownDto> result = repository.fillComboValues(comboFilter, params.toArray());
+
+        /*
+         * "Others" static option add pannuvom list end la
+         */
+
+        return result;
+    }
+
+    @Override
+    public List<DropDownDto> getSubAssembly(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        /*
+         * SubAssembly dropdown configuration - filtered by selected assembly
+         */
+
+        comboFilter.setTableName("GEN_TL_SUBASSEMBLYMST");
+
+        comboFilter.setIdField("SBAM_KEYID");
+
+        comboFilter.setNameField("TRIM(SBAM_NAME)");
+
+        comboFilter.setCodeField("TRIM(SBAM_CODE)");
+
+        comboFilter.setOrderByField("LABEL");
+
+        String assemblyKeyId = commonFilterDto != null ? commonFilterDto.getAssemblyKeyId() : null;
+
+        if (ValidationUtil.isValidKeyId(assemblyKeyId)) {
+
+            comboFilter.setCondSql("""
+                    AND SBAM_ASSEMBLYID = ?
+                    AND SBAM_ACTIVE = 'Y'
+                    """);
+
+            params.add(assemblyKeyId);
+
+        } else {
+
+            // assembly illama call panna empty list return pannuvom
+            return new ArrayList<>();
+        }
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+//**************************************************Gendral Maintenance */
+@Override
+public List<DropDownDto> getGmntShiftCombo(CommonFilterDto commonFilterDto)
+{
+    String atTime = ValidationUtil.isValidKeyId(commonFilterDto.getAtTime())
+            ? commonFilterDto.getAtTime()
+            : java.time.LocalTime.now().toString();
+
+    return repository.getGmntShiftCombo(atTime, commonFilterDto.getFlId());
+}
+
 }

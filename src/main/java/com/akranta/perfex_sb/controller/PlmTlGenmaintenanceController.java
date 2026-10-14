@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.akranta.perfex_sb.dto.GenmaintenanceBookingMobileDTO;
+import com.akranta.perfex_sb.dto.GenmaintenanceCompletionMobileDTO;
 import com.akranta.perfex_sb.exception.ResourceNotFoundException;
 import com.akranta.perfex_sb.model.PlmTlGenmaintenance;
 import com.akranta.perfex_sb.service.PlmTlGenmaintenanceService;
@@ -56,6 +58,80 @@ public class PlmTlGenmaintenanceController {
         } catch (Exception e) {
             logger.error("Error saving General Maintenance: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Mobile booking-only save. Hierarchy (factory/section/cell/element/flid/machine)
+     * is resolved from gen_vw_fnln1, then the standard GM insert is used.
+     *
+     * POST /api/genmaintenance/mobile/booking/save
+     */
+    @PostMapping("/mobile/booking/save")
+    public ResponseEntity<?> saveGeneralmaintenanceBookingMobile(
+            @RequestBody GenmaintenanceBookingMobileDTO request) {
+        logger.info("saveGeneralmaintenanceBookingMobile called – machineid={}, flid={}",
+                request != null ? request.getMachineid() : "null",
+                request != null ? request.getFlid() : "null");
+        try {
+            PlmTlGenmaintenance saved = plmTlGenmaintenanceService.saveGeneralmaintenanceBookingMobile(request);
+            HttpStatus status = (request.getKeyid() == null || request.getKeyid().trim().isEmpty())
+                    ? HttpStatus.CREATED
+                    : HttpStatus.OK;
+            return ResponseEntity.status(status).body(saved);
+        } catch (ResourceNotFoundException e) {
+            logger.error("Equipment hierarchy not found: {}", e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid input: {}", e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        } catch (Exception e) {
+            logger.error("Error saving mobile General Maintenance booking: {}", e.getMessage(), e);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Unable to save.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Mobile completion save. Completed-by, work start, and work end come from the UI.
+     *
+     * POST /api/genmaintenance/mobile/completion/save
+     */
+    @PostMapping("/mobile/completion/save")
+    public ResponseEntity<?> saveGeneralmaintenanceCompletionMobile(
+            @RequestBody GenmaintenanceCompletionMobileDTO request) {
+        logger.info("saveGeneralmaintenanceCompletionMobile called – keyid={}, completedby={}",
+                request != null ? request.getKeyid() : "null",
+                request != null ? request.getCompletedby() : "null");
+        try {
+            PlmTlGenmaintenance saved = plmTlGenmaintenanceService.saveGeneralmaintenanceCompletionMobile(request);
+            return ResponseEntity.ok(saved);
+        } catch (ResourceNotFoundException e) {
+            logger.error("General Maintenance not found: {}", e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid input: {}", e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        } catch (Exception e) {
+            logger.error("Error saving mobile General Maintenance completion: {}", e.getMessage(), e);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Unable to save.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 

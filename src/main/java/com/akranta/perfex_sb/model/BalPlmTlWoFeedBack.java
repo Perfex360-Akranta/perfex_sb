@@ -1,4 +1,5 @@
 package com.akranta.perfex_sb.model;
+
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -10,7 +11,7 @@ import java.time.LocalDateTime;
 
 public class BalPlmTlWoFeedBack {
 
- @Id
+    @Id
     @Column(name = "wofb_feedbackid", length = 14, nullable = false)
     private String feedbackid;
 
@@ -113,11 +114,7 @@ public class BalPlmTlWoFeedBack {
     @Column(name = "wofb_mchcondition", length = 1, nullable = false)
     private String mchcondition;
 
-    @Column(
-        name = "wofb_machinetakeovertime",
-        length = 40,
-        nullable = false
-    )
+    @Column(name = "wofb_machinetakeovertime", length = 40, nullable = false)
     private String machinetakeovertime;
 
     @Column(name = "wofb_createdby", length = 8, nullable = false)
@@ -129,547 +126,316 @@ public class BalPlmTlWoFeedBack {
     @Column(name = "wofb_createdon", nullable = false)
     private LocalDateTime createdon;
 
-    
     // private BalPlmTlSpareconsumed spareconsumed;
 
     // private BalPlmTlSparecostactual sparecostactual;
 
-
     public BalPlmTlWoFeedBack() {
     }
-
-    
-
 
     public String getFeedbackid() {
         return feedbackid;
     }
 
-
-
-
     public void setFeedbackid(String feedbackid) {
         this.feedbackid = feedbackid;
     }
-
-
-
 
     public String getWodetailid() {
         return wodetailid;
     }
 
-
-
-
     public void setWodetailid(String wodetailid) {
         this.wodetailid = wodetailid;
     }
-
-
-
 
     public LocalDateTime getFeedbackdate() {
         return feedbackdate;
     }
 
-
-
-
     public void setFeedbackdate(LocalDateTime feedbackdate) {
         this.feedbackdate = feedbackdate;
     }
-
-
-
 
     public String getMachineid() {
         return machineid;
     }
 
-
-
-
     public void setMachineid(String machineid) {
         this.machineid = machineid;
     }
-
-
-
 
     public String getStatus() {
         return status;
     }
 
-
-
-
     public void setStatus(String status) {
         this.status = status;
     }
-
-
-
 
     public String getAction() {
         return action;
     }
 
-
-
-
     public void setAction(String action) {
         this.action = action;
     }
-
-
-
 
     public LocalDateTime getStartdate() {
         return startdate;
     }
 
-
-
-
     public void setStartdate(LocalDateTime startdate) {
         this.startdate = startdate;
     }
-
-
-
 
     public LocalDateTime getEnddate() {
         return enddate;
     }
 
-
-
-
     public void setEnddate(LocalDateTime enddate) {
         this.enddate = enddate;
     }
-
-
-
 
     public LocalDateTime getCompleteddate() {
         return completeddate;
     }
 
-
-
-
     public void setCompleteddate(LocalDateTime completeddate) {
         this.completeddate = completeddate;
     }
-
-
-
 
     public BigDecimal getDuration() {
         return duration;
     }
 
-
-
-
     public void setDuration(BigDecimal duration) {
         this.duration = duration;
     }
-
-
-
 
     public String getIsprodstopped() {
         return isprodstopped;
     }
 
-
-
-
     public void setIsprodstopped(String isprodstopped) {
         this.isprodstopped = isprodstopped;
     }
-
-
-
 
     public LocalDateTime getProdstartdate() {
         return prodstartdate;
     }
 
-
-
-
     public void setProdstartdate(LocalDateTime prodstartdate) {
         this.prodstartdate = prodstartdate;
     }
-
-
-
 
     public BigDecimal getCurrentreading() {
         return currentreading;
     }
 
-
-
-
     public void setCurrentreading(BigDecimal currentreading) {
         this.currentreading = currentreading;
     }
-
-
-
 
     public BigDecimal getAdjustedreading() {
         return adjustedreading;
     }
 
-
-
-
     public void setAdjustedreading(BigDecimal adjustedreading) {
         this.adjustedreading = adjustedreading;
     }
-
-
-
 
     public String getUom() {
         return uom;
     }
 
-
-
-
     public void setUom(String uom) {
         this.uom = uom;
     }
-
-
-
 
     public String getWhywhyflag() {
         return whywhyflag;
     }
 
-
-
-
     public void setWhywhyflag(String whywhyflag) {
         this.whywhyflag = whywhyflag;
     }
-
-
-
 
     public String getWhywhyid() {
         return whywhyid;
     }
 
-
-
-
     public void setWhywhyid(String whywhyid) {
         this.whywhyid = whywhyid;
     }
-
-
-
 
     public String getAmcflag() {
         return amcflag;
     }
 
-
-
-
     public void setAmcflag(String amcflag) {
         this.amcflag = amcflag;
     }
-
-
-
 
     public String getAmcdetailid() {
         return amcdetailid;
     }
 
-
-
-
     public void setAmcdetailid(String amcdetailid) {
         this.amcdetailid = amcdetailid;
     }
-
-
-
 
     public String getSpareflag() {
         return spareflag;
     }
 
-
-
-
     public void setSpareflag(String spareflag) {
         this.spareflag = spareflag;
     }
-
-
-
 
     public BigDecimal getSparecost() {
         return sparecost;
     }
 
-
-
-
     public void setSparecost(BigDecimal sparecost) {
         this.sparecost = sparecost;
     }
-
-
-
 
     public BigDecimal getManpowercost() {
         return manpowercost;
     }
 
-
-
-
     public void setManpowercost(BigDecimal manpowercost) {
         this.manpowercost = manpowercost;
     }
-
-
-
 
     public BigDecimal getContractorcost() {
         return contractorcost;
     }
 
-
-
-
     public void setContractorcost(BigDecimal contractorcost) {
         this.contractorcost = contractorcost;
     }
-
-
-
 
     public BigDecimal getOthercost() {
         return othercost;
     }
 
-
-
-
     public void setOthercost(BigDecimal othercost) {
         this.othercost = othercost;
     }
-
-
-
 
     public String getObservation() {
         return observation;
     }
 
-
-
-
     public void setObservation(String observation) {
         this.observation = observation;
     }
-
-
-
 
     public String getFeedback() {
         return feedback;
     }
 
-
-
-
     public void setFeedback(String feedback) {
         this.feedback = feedback;
     }
-
-
-
 
     public String getCompletedby() {
         return completedby;
     }
 
-
-
-
     public void setCompletedby(String completedby) {
         this.completedby = completedby;
     }
-
-
-
 
     public String getRescheduleflag() {
         return rescheduleflag;
     }
 
-
-
-
     public void setRescheduleflag(String rescheduleflag) {
         this.rescheduleflag = rescheduleflag;
     }
-
-
-
 
     public String getReschedulereason() {
         return reschedulereason;
     }
 
-
-
-
     public void setReschedulereason(String reschedulereason) {
         this.reschedulereason = reschedulereason;
     }
-
-
-
 
     public LocalDateTime getNextinspectiondate() {
         return nextinspectiondate;
     }
 
-
-
-
     public void setNextinspectiondate(LocalDateTime nextinspectiondate) {
         this.nextinspectiondate = nextinspectiondate;
     }
-
-
-
 
     public String getRemarks() {
         return remarks;
     }
 
-
-
-
     public void setRemarks(String remarks) {
         this.remarks = remarks;
     }
-
-
-
 
     public String getRootcause() {
         return rootcause;
     }
 
-
-
-
     public void setRootcause(String rootcause) {
         this.rootcause = rootcause;
     }
-
-
-
 
     public String getCountermeasure() {
         return countermeasure;
     }
 
-
-
-
     public void setCountermeasure(String countermeasure) {
         this.countermeasure = countermeasure;
     }
-
-
-
 
     public String getMchcondition() {
         return mchcondition;
     }
 
-
-
-
     public void setMchcondition(String mchcondition) {
         this.mchcondition = mchcondition;
     }
-
-
-
 
     public String getMachinetakeovertime() {
         return machinetakeovertime;
     }
 
-
-
-
     public void setMachinetakeovertime(String machinetakeovertime) {
         this.machinetakeovertime = machinetakeovertime;
     }
-
-
-
 
     public String getCreatedby() {
         return createdby;
     }
 
-
-
-
     public void setCreatedby(String createdby) {
         this.createdby = createdby;
     }
-
-
-
 
     public LocalDateTime getModifiedon() {
         return modifiedon;
     }
 
-
-
-
     public void setModifiedon(LocalDateTime modifiedon) {
         this.modifiedon = modifiedon;
     }
-
-
-
 
     public LocalDateTime getCreatedon() {
         return createdon;
     }
 
-
-
-
     public void setCreatedon(LocalDateTime createdon) {
         this.createdon = createdon;
     }
-
 
     @Transient
     private LocalDateTime obsvTargetDate = null;
@@ -691,8 +457,6 @@ public class BalPlmTlWoFeedBack {
     @Transient
     private String pmCalendarId = null;
 
-    
-
     public LocalDateTime getObsvTargetDate() {
         return obsvTargetDate;
     }
@@ -709,111 +473,81 @@ public class BalPlmTlWoFeedBack {
         this.obsvResponsibility = obsvResponsibility;
     }
 
+    // public PlmTlMultipleresp[] getMultipleResp() {
+    //     // TODO Auto-generated method stub
+    //     throw new UnsupportedOperationException("Unimplemented method 'getMultipleResp'");
+    //}   
 
+    // public void setWofbPmcalendarId(String pmcalendarId) {
+    //     // TODO Auto-generated method stub
+    //     throw new UnsupportedOperationException("Unimplemented method 'setWofbPmcalendarId'");
+    // }
 
+    // public void setWofbAssemblyid(String assemblyId) {
+    //     // TODO Auto-generated method stub
+    //     throw new UnsupportedOperationException("Unimplemented method 'setWofbAssemblyid'");
+    // }
 
-
+    // public PlmTlCbmreading getCbmReading() {
+    // // TODO Auto-generated method stub
+    // throw new UnsupportedOperationException("Unimplemented method
+    // 'getCbmReading'");
+    // }
 
     public BigDecimal getCbmReadingValue() {
         return cbmReadingValue;
     }
 
-
-
-
     public void setCbmReadingValue(BigDecimal cbmReadingValue) {
         this.cbmReadingValue = cbmReadingValue;
     }
-
-
-
 
     public LocalDateTime getCbmNextDueDate() {
         return cbmNextDueDate;
     }
 
-
-
-
     public void setCbmNextDueDate(LocalDateTime cbmNextDueDate) {
         this.cbmNextDueDate = cbmNextDueDate;
     }
-
-
-
 
     public BigDecimal getCbmMinReading() {
         return cbmMinReading;
     }
 
-
-
-
     public void setCbmMinReading(BigDecimal cbmMinReading) {
         this.cbmMinReading = cbmMinReading;
     }
-
-
-
 
     public BigDecimal getCbmMaxReading() {
         return cbmMaxReading;
     }
 
-
-
-
     public void setCbmMaxReading(BigDecimal cbmMaxReading) {
         this.cbmMaxReading = cbmMaxReading;
     }
-
-
-
 
     public BigDecimal getCbmAdjustedReading() {
         return cbmAdjustedReading;
     }
 
-
-
-
     public void setCbmAdjustedReading(BigDecimal cbmAdjustedReading) {
         this.cbmAdjustedReading = cbmAdjustedReading;
     }
-
-
-
 
     public String getPmstandId() {
         return pmstandId;
     }
 
-
-
-
     public void setPmstandId(String pmstandId) {
         this.pmstandId = pmstandId;
     }
-
-
-
 
     public String getPmCalendarId() {
         return pmCalendarId;
     }
 
-
-
-
     public void setPmCalendarId(String pmCalendarId) {
         this.pmCalendarId = pmCalendarId;
     }
 
-
-
-
-
-    
-
 }
-

@@ -117,6 +117,8 @@ public List<DropDownDto> getEmpTypeCombo(CommonFilterDto commonFilterDto);
 
     public List<DropDownDto> getMould(CommonFilterDto commonFilterDto);
 
+    public List<DropDownDto> getMocItemComboList(CommonFilterDto commonFilterDto);
+
     //----------------------------------------GOPI--------------------------------------------------
 
 //--------------------------why why---------------------------------------------
@@ -188,7 +190,12 @@ public List<DropDownDto> getUserRollComboList(CommonFilterDto commonFilterDto);
 
 public String getCurrentShift(CommonFilterDto commonFilterDto);
 
+//***********************************************BreakDown****************************** */
+public List<DropDownDto> getAssembly(CommonFilterDto commonFilterDto);
 
+public List<DropDownDto> getSubAssembly(CommonFilterDto commonFilterDto);
+//***********************************************GeneralMaintenance******************************** */
+public List<DropDownDto> getGmntShiftCombo(CommonFilterDto commonFilterDto);
 
 
 

@@ -4,18 +4,14 @@ import java.io.Serializable;
 
 import com.akranta.perfex_sb.model.BalPlmTlSpareconsumed;
 import com.akranta.perfex_sb.model.BalPlmTlSparecostactual;
-
+import com.akranta.perfex_sb.model.PlmTlSpareconsumed;
+import com.akranta.perfex_sb.model.PlmTlSparecostactual;
 
 public class BalWorkOrderDetailsListDto 
 {
-
-
-
-
     private String wofbStarttime;
     private String wofbEndtime;
     private String wofbProdStarttime;
-
     private String wofbObservation;
     private String wofbRemarks;
 

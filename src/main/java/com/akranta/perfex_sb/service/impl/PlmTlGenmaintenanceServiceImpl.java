@@ -1,18 +1,27 @@
 package com.akranta.perfex_sb.service.impl;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.akranta.perfex_sb.dto.GenmaintenanceBookingMobileDTO;
+import com.akranta.perfex_sb.dto.GenmaintenanceCompletionMobileDTO;
 import com.akranta.perfex_sb.exception.ResourceNotFoundException;
 import com.akranta.perfex_sb.model.PlmTlGenmaintenance;
 import com.akranta.perfex_sb.model.WomTlWomst;
+import com.akranta.perfex_sb.repository.BreakdownBookingMobileRepo;
 import com.akranta.perfex_sb.repository.PlmTlGenmaintenanceRepository;
 import com.akranta.perfex_sb.repository.WomTlWomstRepository;
 import com.akranta.perfex_sb.service.DbActionTemplate;
@@ -47,17 +56,23 @@ public class PlmTlGenmaintenanceServiceImpl implements PlmTlGenmaintenanceServic
     // Default machine calendar time (minutes) – matches legacy hardcoded 480
     private static final BigDecimal DEFAULT_CAL_TIME = BigDecimal.valueOf(480);
 
+    private static final String EMPTY_PLACEHOLDER = "{}";
+    private static final LocalDateTime PAST_NULL_DATETIME = LocalDateTime.of(1801, 1, 1, 0, 0);
+
     // ── Dependencies ──────────────────────────────────────────────────────────
     private final PlmTlGenmaintenanceRepository plmTlGenmaintenanceRepository;
     private final WomTlWomstRepository          womRepository;
+    private final BreakdownBookingMobileRepo    breakdownBookingMobileRepo;
     private final DbActionTemplate              dbActionTemplate;
 
     public PlmTlGenmaintenanceServiceImpl(
             PlmTlGenmaintenanceRepository plmTlGenmaintenanceRepository,
             WomTlWomstRepository womRepository,
+            BreakdownBookingMobileRepo breakdownBookingMobileRepo,
             DbActionTemplate dbActionTemplate) {
         this.plmTlGenmaintenanceRepository = plmTlGenmaintenanceRepository;
         this.womRepository                 = womRepository;
+        this.breakdownBookingMobileRepo    = breakdownBookingMobileRepo;
         this.dbActionTemplate              = dbActionTemplate;
     }
 
@@ -81,6 +96,196 @@ public class PlmTlGenmaintenanceServiceImpl implements PlmTlGenmaintenanceServic
         } else {
             return doUpdate(plmTlGenmaintenance);
         }
+    }
+
+    @Override
+    @Transactional
+    public PlmTlGenmaintenance saveGeneralmaintenanceBookingMobile(GenmaintenanceBookingMobileDTO request)
+            throws Exception {
+        if (request == null) {
+            throw new IllegalArgumentException("Booking request is required");
+        }
+        if (isBlankOrPlaceholder(request.getMachineid()) && isBlankOrPlaceholder(request.getFlid())) {
+            throw new IllegalArgumentException("machineid or flid is required");
+        }
+        if (isBlankOrPlaceholder(request.getShift())) {
+            throw new IllegalArgumentException("Shift is required");
+        }
+        if (isBlankOrPlaceholder(request.getActivitytype())) {
+            throw new IllegalArgumentException("Activity Type is required");
+        }
+        if (isBlankOrPlaceholder(request.getTrade())) {
+            throw new IllegalArgumentException("Maintenance Section is required");
+        }
+        if (isBlankOrPlaceholder(request.getIsSpares())) {
+            throw new IllegalArgumentException("Spare Replaced is required");
+        }
+        if (isBlankOrPlaceholder(request.getProblem())) {
+            throw new IllegalArgumentException("Problem is required");
+        }
+        if (isBlankOrPlaceholder(request.getPriority())) {
+            throw new IllegalArgumentException("Priority is required");
+        }
+        if (isBlankOrPlaceholder(request.getBookedby())) {
+            throw new IllegalArgumentException("Booked By is required");
+        }
+
+        Map<String, Object> hierarchy = breakdownBookingMobileRepo.findEquipmentHierarchy(
+                blankToNull(request.getMachineid()),
+                blankToNull(request.getFlid()));
+
+        if (hierarchy == null || hierarchy.isEmpty()) {
+            throw new ResourceNotFoundException(
+                    "Equipment hierarchy not found in gen_vw_fnln1 for machineid="
+                            + request.getMachineid() + ", flid=" + request.getFlid());
+        }
+
+        String factoryid = requiredHierarchyValue(hierarchy, "factoryid");
+        String sectionid = requiredHierarchyValue(hierarchy, "sectionid");
+        String lineid = placeholderIfBlank(asString(hierarchy.get("cellid")));
+        String machineid = requiredHierarchyValue(hierarchy, "machineid");
+        String elementid = requiredHierarchyValue(hierarchy, "elementid");
+        String flid = requiredHierarchyValue(hierarchy, "flid");
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime occurredOn = resolveOccurredDateTime(request.getOccureddate(), request.getOccurredTime(), now);
+        LocalDateTime shiftDate = parseDateTimeOrStartOfDay(request.getShiftdate(), occurredOn.toLocalDate().atStartOfDay());
+        LocalDateTime targetDate = parseDateTimeOrStartOfDay(request.getTargetdate(), now.toLocalDate().atStartOfDay());
+        String bookedby = request.getBookedby().trim();
+
+        PlmTlGenmaintenance gmn = new PlmTlGenmaintenance();
+        gmn.setKeyid(blankToNull(request.getKeyid()));
+        gmn.setOccureddate(occurredOn);
+        gmn.setShiftdate(shiftDate.toLocalDate().atStartOfDay());
+        gmn.setBookeddate(now.toLocalDate().atStartOfDay());
+        gmn.setReceiveddate(now);
+        gmn.setAllocateddate(now);
+        gmn.setWostartdate(PAST_NULL_DATETIME);
+        gmn.setWoenddate(PAST_NULL_DATETIME);
+        gmn.setResponsetime(toDecimal(request.getResponsetime()));
+        gmn.setWorkhours(toDecimal(request.getWorkhours()));
+        gmn.setDowntime(toDecimal(request.getDowntime()));
+        gmn.setRefdoctype(EMPTY_PLACEHOLDER);
+        gmn.setRefdocid(EMPTY_PLACEHOLDER);
+        gmn.setFactoryid(factoryid);
+        gmn.setSectionid(sectionid);
+        gmn.setLineid(lineid);
+        gmn.setMachineid(machineid);
+        gmn.setStationid(placeholderIfBlank(request.getStationid()));
+        gmn.setPhenid(EMPTY_PLACEHOLDER);
+        gmn.setRootcauseid(EMPTY_PLACEHOLDER);
+        gmn.setShift(request.getShift().trim());
+        gmn.setTrade(request.getTrade().trim());
+        gmn.setPartlocation(placeholderIfBlank(request.getPartlocation()));
+        gmn.setActivitytype(request.getActivitytype().trim());
+        gmn.setMchcondition(placeholderIfBlank(request.getMchcondition()));
+        gmn.setManpowercost(BigDecimal.ZERO);
+        gmn.setContractorcost(BigDecimal.ZERO);
+        gmn.setOthercost(BigDecimal.ZERO);
+        gmn.setSparecost(EMPTY_PLACEHOLDER);
+        gmn.setProblem(request.getProblem().trim());
+        gmn.setRootcause(placeholderIfBlank(request.getRootcause()));
+        gmn.setCountermeasure(placeholderIfBlank(request.getCountermeasure()));
+        gmn.setAction(placeholderIfBlank(request.getAction()));
+        gmn.setReportedby(bookedby);
+        gmn.setTargetdate(targetDate.toLocalDate().atStartOfDay());
+        gmn.setStatus(isBlankOrPlaceholder(request.getStatus()) ? "P" : request.getStatus().trim());
+        gmn.setIsyy("Y");
+        gmn.setYyno("0");
+        gmn.setCompletedby(bookedby);
+        gmn.setCompleteddate(now);
+        gmn.setRemarks(EMPTY_PLACEHOLDER);
+        gmn.setPctrmeasure(EMPTY_PLACEHOLDER);
+        gmn.setRelatedto("MCH");
+        gmn.setMouldid(EMPTY_PLACEHOLDER);
+        gmn.setOrdertype("-");
+        gmn.setErppoststatus("X");
+        gmn.setErpnumber("0");
+        gmn.setSparesreplaced(request.getIsSpares().trim());
+        gmn.setTempfield1("-");
+        gmn.setTempfield2("-");
+        gmn.setTempfield3("-");
+        gmn.setTempfield4("-");
+        gmn.setTempfield5("-");
+        gmn.setTempfield6("-");
+        gmn.setTempfield7("-");
+        gmn.setTempfield8("-");
+        gmn.setTempfield9("-");
+        gmn.setTempfield10("-");
+        gmn.setElementid(elementid);
+        gmn.setFlid(flid);
+        gmn.setActive('Y');
+        gmn.setCreatedby(bookedby);
+        gmn.setCreatedon(now);
+        gmn.setModifiedon(now);
+
+        logger.info("Mobile GM booking save – factoryid={}, sectionid={}, lineid={}, machineid={}, flid={}, elementid={}",
+                factoryid, sectionid, lineid, machineid, flid, elementid);
+
+        PlmTlGenmaintenance saved = saveGeneralmainteneance(gmn);
+        applyMobilePriorityToWorkOrder(saved, request.getPriority());
+        return saved;
+    }
+
+    @Override
+    @Transactional
+    public PlmTlGenmaintenance saveGeneralmaintenanceCompletionMobile(GenmaintenanceCompletionMobileDTO request)
+            throws Exception {
+        if (request == null) {
+            throw new IllegalArgumentException("Completion request is required");
+        }
+        if (isBlankOrPlaceholder(request.getKeyid())) {
+            throw new IllegalArgumentException("General Maintenance keyid is required");
+        }
+        if (isBlankOrPlaceholder(request.getCompletedby())) {
+            throw new IllegalArgumentException("Completed By is required");
+        }
+        if (isBlankOrPlaceholder(request.getWostartdate())) {
+            throw new IllegalArgumentException("Work Start is required");
+        }
+        if (isBlankOrPlaceholder(request.getWoenddate())) {
+            throw new IllegalArgumentException("Work End is required");
+        }
+
+        String keyid = request.getKeyid().trim();
+        PlmTlGenmaintenance existing = plmTlGenmaintenanceRepository.findByKeyid(keyid);
+        if (existing == null) {
+            throw new ResourceNotFoundException("General Maintenance not found with keyid: " + keyid);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime workStart = parseFlexibleDateTime(request.getWostartdate());
+        LocalDateTime workEnd = parseFlexibleDateTime(request.getWoenddate());
+        if (workStart == null || workEnd == null) {
+            throw new IllegalArgumentException("Work Start and Work End must be valid date/time values");
+        }
+        if (workEnd.isBefore(workStart)) {
+            throw new IllegalArgumentException("Work End must be after Work Start");
+        }
+
+        LocalDateTime completedDate = parseFlexibleDateTime(request.getCompleteddate());
+        if (completedDate == null) {
+            completedDate = workEnd;
+        }
+
+        long downtimeMinutes = Math.max(0, Duration.between(workStart, workEnd).toMinutes());
+
+        existing.setWostartdate(workStart);
+        existing.setWoenddate(workEnd);
+        existing.setCompletedby(request.getCompletedby().trim());
+        existing.setCompleteddate(completedDate);
+        existing.setRemarks(placeholderIfBlank(request.getRemarks()));
+        existing.setStatus("C");
+        existing.setWorkhours(BigDecimal.valueOf(downtimeMinutes));
+        existing.setDowntime(BigDecimal.valueOf(downtimeMinutes));
+        existing.setModifiedon(now);
+
+        logger.info("Mobile GM completion save – keyid={}, completedby={}, workStart={}, workEnd={}",
+                keyid, request.getCompletedby(), workStart, workEnd);
+
+        PlmTlGenmaintenance saved = saveGeneralmainteneance(existing);
+        applyMobileCompletionToWorkOrder(saved, request.getCompletedby().trim(), workStart, workEnd);
+        return saved;
     }
 
     // =========================================================================
@@ -583,5 +788,156 @@ public class PlmTlGenmaintenanceServiceImpl implements PlmTlGenmaintenanceServic
             return fallback;
         }
         return value;
+    }
+
+    private void applyMobilePriorityToWorkOrder(PlmTlGenmaintenance saved, String priority) {
+        if (saved == null || !isValidKeyId(saved.getRefdocid()) || isBlankOrPlaceholder(priority)) {
+            return;
+        }
+        womRepository.findById(saved.getRefdocid()).ifPresent(wom -> {
+            wom.setPriority(priority.trim().charAt(0));
+            wom.setModifiedon(LocalDateTime.now());
+            womRepository.save(wom);
+        });
+    }
+
+    private void applyMobileCompletionToWorkOrder(PlmTlGenmaintenance saved, String completedby,
+            LocalDateTime workStart, LocalDateTime workEnd) {
+        if (saved == null || !isValidKeyId(saved.getRefdocid())) {
+            return;
+        }
+        womRepository.findById(saved.getRefdocid()).ifPresent(wom -> {
+            wom.setStatus('C');
+            wom.setFinalstatus("COMPLETED");
+            wom.setWorkstartdate(workStart.toLocalDate());
+            wom.setWorkenddate(workEnd.toLocalDate());
+            wom.setWorkstartflag('Y');
+            wom.setWorkendflag('Y');
+            wom.setDoneby(completedby);
+            wom.setWoapprovalby(completedby);
+            wom.setMachinereleaseby(completedby);
+            wom.setModifiedon(LocalDateTime.now());
+            womRepository.save(wom);
+        });
+    }
+
+    private LocalDateTime resolveOccurredDateTime(String occurredDate, String occurredTime, LocalDateTime fallback) {
+        LocalTime timePart = parseTimeOnly(occurredTime);
+        LocalDateTime fromDate = parseFlexibleDateTime(occurredDate);
+        LocalDateTime fromTime = timePart == null ? parseFlexibleDateTime(occurredTime) : null;
+
+        if (fromDate != null && timePart != null) {
+            return fromDate.toLocalDate().atTime(timePart);
+        }
+        if (fromTime != null && fromTime.toLocalTime() != LocalTime.MIDNIGHT) {
+            return fromTime;
+        }
+        if (fromDate != null && fromDate.toLocalTime() != LocalTime.MIDNIGHT) {
+            return fromDate;
+        }
+        if (fromDate != null) {
+            return timePart != null ? fromDate.toLocalDate().atTime(timePart) : fromDate;
+        }
+        if (fromTime != null) {
+            return fromTime;
+        }
+        return fallback;
+    }
+
+    private LocalDateTime parseDateTimeOrStartOfDay(String value, LocalDateTime fallback) {
+        LocalDateTime parsed = parseFlexibleDateTime(value);
+        return parsed != null ? parsed : fallback;
+    }
+
+    private LocalDateTime parseFlexibleDateTime(String value) {
+        if (isBlankOrPlaceholder(value)) {
+            return null;
+        }
+        String trimmed = value.trim();
+        if (parseTimeOnly(trimmed) != null) {
+            return null;
+        }
+        DateTimeFormatter[] formatters = new DateTimeFormatter[] {
+                DateTimeFormatter.ISO_LOCAL_DATE_TIME,
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"),
+                DateTimeFormatter.ofPattern("d-MMM-yyyy HH:mm", Locale.ENGLISH),
+                DateTimeFormatter.ofPattern("d-MMM-yyyy HH:mm:ss", Locale.ENGLISH),
+                DateTimeFormatter.ofPattern("dd-MMM-yyyy HH:mm", Locale.ENGLISH)
+        };
+        for (DateTimeFormatter formatter : formatters) {
+            try {
+                return LocalDateTime.parse(trimmed, formatter);
+            } catch (DateTimeParseException ignored) {
+                // try next pattern
+            }
+        }
+        try {
+            return LocalDate.parse(trimmed, DateTimeFormatter.ISO_LOCAL_DATE).atStartOfDay();
+        } catch (DateTimeParseException ignored) {
+            // try desktop / card formats
+        }
+        try {
+            return LocalDate.parse(trimmed, DateTimeFormatter.ofPattern("d-MMM-yyyy", Locale.ENGLISH)).atStartOfDay();
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date: " + value);
+        }
+    }
+
+    private LocalTime parseTimeOnly(String value) {
+        if (isBlankOrPlaceholder(value)) {
+            return null;
+        }
+        String trimmed = value.trim();
+        DateTimeFormatter[] formatters = new DateTimeFormatter[] {
+                DateTimeFormatter.ofPattern("HH:mm:ss"),
+                DateTimeFormatter.ofPattern("HH:mm")
+        };
+        for (DateTimeFormatter formatter : formatters) {
+            try {
+                return LocalTime.parse(trimmed, formatter);
+            } catch (DateTimeParseException ignored) {
+                // try next pattern
+            }
+        }
+        return null;
+    }
+
+    private BigDecimal toDecimal(String value) {
+        if (isBlankOrPlaceholder(value)) {
+            return BigDecimal.ZERO;
+        }
+        try {
+            return new BigDecimal(value.trim());
+        } catch (NumberFormatException e) {
+            return BigDecimal.ZERO;
+        }
+    }
+
+    private String requiredHierarchyValue(Map<String, Object> hierarchy, String column) {
+        String value = asString(hierarchy.get(column));
+        if (isBlankOrPlaceholder(value)) {
+            throw new ResourceNotFoundException(
+                    "Equipment hierarchy is missing " + column + " in gen_vw_fnln1");
+        }
+        return value;
+    }
+
+    private String asString(Object value) {
+        return value == null ? null : value.toString().trim();
+    }
+
+    private String blankToNull(String value) {
+        return isBlankOrPlaceholder(value) ? null : value.trim();
+    }
+
+    private String placeholderIfBlank(String value) {
+        return isBlankOrPlaceholder(value) ? EMPTY_PLACEHOLDER : value.trim();
+    }
+
+    private boolean isBlankOrPlaceholder(String value) {
+        return value == null || value.trim().isEmpty() || "{}".equals(value.trim());
     }
 }

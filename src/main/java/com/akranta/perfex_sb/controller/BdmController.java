@@ -1,6 +1,9 @@
 package com.akranta.perfex_sb.controller;
 
 import com.akranta.perfex_sb.dto.BdmDto;
+import com.akranta.perfex_sb.dto.BreakdownAllocationMobileDTO;
+import com.akranta.perfex_sb.dto.BreakdownBookingMobileDTO;
+import com.akranta.perfex_sb.dto.BreakdownCompletionMobileDTO;
 import com.akranta.perfex_sb.exception.ResourceNotFoundException;
 import com.akranta.perfex_sb.model.BAL_BdmTlDtl;
 import com.akranta.perfex_sb.model.BAL_BdmTlMst;
@@ -60,6 +63,81 @@ public class BdmController {
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
             logger.error("Error saving BDM: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * Mobile booking-only save. Hierarchy (factory/section/cell/element/flid/machine)
+     * is resolved from gen_vw_fnln1, then the standard BDM insert/update is used.
+     *
+     * POST /api/bdm/mobile/booking/save
+     */
+    @PostMapping("/mobile/booking/save")
+    public ResponseEntity<BdmDto> saveBreakdownBooking(@RequestBody BreakdownBookingMobileDTO request) {
+        logger.info("saveBreakdownBooking called – machineid={}, flid={}",
+                request != null ? request.getMachineid() : "null",
+                request != null ? request.getFlid() : "null");
+        try {
+            return service.saveBreakdownBooking(request);
+        } catch (ResourceNotFoundException e) {
+            logger.error("Equipment hierarchy not found: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid input: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            logger.error("Error saving mobile breakdown booking: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * Mobile allocation save. Trade / start / end come from the UI popup
+     * and are applied onto the existing BDM + work order.
+     *
+     * POST /api/bdm/mobile/allocation/save
+     */
+    @PostMapping("/mobile/allocation/save")
+    public ResponseEntity<BdmDto> saveBreakdownAllocation(@RequestBody BreakdownAllocationMobileDTO request) {
+        logger.info("saveBreakdownAllocation called – keyid={}, sectionid={}",
+                request != null ? request.getKeyid() : "null",
+                request != null ? request.getSectionid() : "null");
+        try {
+            return service.saveBreakdownAllocation(request);
+        } catch (ResourceNotFoundException e) {
+            logger.error("BDM record not found: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid input: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            logger.error("Error saving mobile breakdown allocation: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * Mobile completion save. Completed-by + completed date come from the UI.
+     * Only this step closes the breakdown and removes it from the allocation list.
+     *
+     * POST /api/bdm/mobile/completion/save
+     */
+    @PostMapping("/mobile/completion/save")
+    public ResponseEntity<BdmDto> saveBreakdownCompletion(@RequestBody BreakdownCompletionMobileDTO request) {
+        logger.info("saveBreakdownCompletion called – keyid={}, completedby={}",
+                request != null ? request.getKeyid() : "null",
+                request != null ? request.getCompletedby() : "null");
+        try {
+            return service.saveBreakdownCompletion(request);
+        } catch (ResourceNotFoundException e) {
+            logger.error("BDM record not found: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid input: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            logger.error("Error saving mobile breakdown completion: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().build();
         }
     }

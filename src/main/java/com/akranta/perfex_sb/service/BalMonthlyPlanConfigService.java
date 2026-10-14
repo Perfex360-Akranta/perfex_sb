@@ -13,6 +13,9 @@ import com.akranta.perfex_sb.dto.BalSaveObservationsDto;
 import com.akranta.perfex_sb.dto.BalSaveWorkOrderDetailsDto;
 import com.akranta.perfex_sb.dto.BalUpdateAllocatedDto;
 import com.akranta.perfex_sb.dto.BalUpdateWorkOrderDetailsDto;
+import com.akranta.perfex_sb.dto.BalworkordermobileDTO;
+import com.akranta.perfex_sb.dto.EquipmentFnlnDto;
+import com.akranta.perfex_sb.dto.EquipmentInfoDto;
 import com.akranta.perfex_sb.model.BalPlmTlCalendar;
 
 public interface BalMonthlyPlanConfigService  {
@@ -21,6 +24,8 @@ public interface BalMonthlyPlanConfigService  {
 
 
      String saveGDWorkOrderDetails(BalSaveWorkOrderDetailsDto model) throws Exception;
+
+     BalSaveWorkOrderDetailsDto saveGDWorkOrderDetailsMobile(BalSaveWorkOrderDetailsDto model) throws Exception;
 
      public void saveObservations(@RequestBody BalSaveObservationsDto observationsDto) throws Exception;
 
@@ -33,5 +38,13 @@ public interface BalMonthlyPlanConfigService  {
          public String updateAllocated(@RequestBody BalUpdateAllocatedDto dto);
 
           public String cancelAllocated(@RequestBody BalCancelAllocatedDto dto);
+
+          // public BalworkordermobileDTO getEquipmentDetails(String equipmentNo) throws Exception;
+
+          public EquipmentInfoDto getEquipmentInfo(String equipmentNo) throws Exception;
+
+          public EquipmentFnlnDto getEquipmentByNoNEW(String equipmentNo) throws Exception;
+
+
     
 }

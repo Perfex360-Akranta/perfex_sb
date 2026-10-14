@@ -5,14 +5,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.akranta.perfex_sb.dto.BalAllWoGenDataMobileDto;
 import com.akranta.perfex_sb.dto.BalCancelAllocatedDto;
 import com.akranta.perfex_sb.dto.BalGetScheduleDto;
@@ -41,6 +40,11 @@ import com.akranta.perfex_sb.repository.BalPlmTlWofeedbackEntryRepo;
 import com.akranta.perfex_sb.service.BalMonthlyPlanConfigService;
 import com.akranta.perfex_sb.service.DbActionTemplate;
 import com.akranta.perfex_sb.util.ValidationUtil;
+import com.akranta.perfex_sb.dto.BalworkordermobileDTO;
+import com.akranta.perfex_sb.dto.EquipmentFnlnDto;
+import com.akranta.perfex_sb.dto.EquipmentInfoDto;
+import com.akranta.perfex_sb.dto.BalworkordermobileDTO;
+import com.akranta.perfex_sb.dto.EquipmentInfoDto;
 
 @Service
 public class BalMonthlyPlanConfigServiceImpl implements BalMonthlyPlanConfigService {
@@ -155,14 +159,14 @@ public class BalMonthlyPlanConfigServiceImpl implements BalMonthlyPlanConfigServ
                     && ValidationUtil.isValidKeyId(feedbackListValue.getCbmReading().toString())) {
 
                 feedback.setPmstandId(feedbackListValue.getPmstandId());
-                logger.info("Standard id {} ",feedbackListValue.getPmstandId());
+                logger.info("Standard id {} ", feedbackListValue.getPmstandId());
                 feedback.setObsvTargetDate(feedbackListValue.getObsvTargetDate());
                 feedback.setObsvResponsibility(feedbackListValue.getObsvResponsibility());
                 feedback.setCbmReadingValue(feedbackListValue.getCbmReading());
                 feedback.setCbmMinReading(feedbackListValue.getCbmMinReading());
                 feedback.setCbmMaxReading(feedbackListValue.getCbmMaxReading());
                 feedback.setPmCalendarId(feedbackListValue.getPmCalendarId());
-                logger.info("Calendar id {} ",feedbackListValue.getPmCalendarId());
+                logger.info("Calendar id {} ", feedbackListValue.getPmCalendarId());
                 feedback.setCbmAdjustedReading(feedbackListValue.getCbmAdjustedReading());
                 feedback.setCbmNextDueDate(feedbackListValue.getCbmNextDueDate());
 
@@ -213,6 +217,53 @@ public class BalMonthlyPlanConfigServiceImpl implements BalMonthlyPlanConfigServ
         saveMultipleResp(multipleResps, pmStdId, "");
         return "Success";
 
+    }
+
+    @Override
+    @Transactional
+    public BalSaveWorkOrderDetailsDto saveGDWorkOrderDetailsMobile(BalSaveWorkOrderDetailsDto model) throws Exception {
+        List<BalWorkOrderFeedbackDto> feedbackList = model.getFeedbackList();
+        List<BalWorkOrderDetailsListDto> workOrderDetailsListDtos = model.getWorkOrderDetailsLstBean();
+        String pmStdId = model.getPmStdId();
+
+        if (feedbackList != null) {
+            for (int i = 0; i < feedbackList.size(); i++) {
+                BalWorkOrderFeedbackDto feedbackListValue = feedbackList.get(i);
+                BalPlmTlWoFeedBack feedback = feedbackListValue.getFeedback();
+
+                List<Object[]> idRows = feedBackRepo.findWorkOrderMobileByWoDetailId(feedback.getWodetailid());
+                if (idRows != null && !idRows.isEmpty() && idRows.get(0) != null && idRows.get(0).length >= 3) {
+                    Object[] idRow = idRows.get(0);
+                    BalworkordermobileDTO ids = new BalworkordermobileDTO();
+                    ids.setMachineid(idRow[0] != null ? idRow[0].toString() : null);
+                    ids.setPmstandid(idRow[1] != null ? idRow[1].toString() : null);
+                    ids.setPmcalendarid(idRow[2] != null ? idRow[2].toString() : null);
+
+                    feedback.setMachineid(ids.getMachineid());
+                    feedback.setPmstandId(ids.getPmstandid());
+                    feedback.setPmCalendarId(ids.getPmcalendarid());
+
+                    feedbackListValue.setPmstandId(ids.getPmstandid());
+                    feedbackListValue.setPmCalendarId(ids.getPmcalendarid());
+
+                    if (!ValidationUtil.isValidKeyId(pmStdId)) {
+                        pmStdId = ids.getPmstandid();
+                    }
+
+                    if (workOrderDetailsListDtos != null) {
+                        for (BalWorkOrderDetailsListDto detail : workOrderDetailsListDtos) {
+                            detail.setMachineId(ids.getMachineid());
+                            detail.setPmstandId(ids.getPmstandid());
+                            detail.setPmCalendarId(ids.getPmcalendarid());
+                        }
+                    }
+                }
+            }
+        }
+
+        model.setPmStdId(pmStdId);
+        saveGDWorkOrderDetails(model);
+        return model;
     }
 
     @Override
@@ -326,7 +377,7 @@ public class BalMonthlyPlanConfigServiceImpl implements BalMonthlyPlanConfigServ
         newPlmcbmwocompdtl.setWofeedbackid(feedback.getFeedbackid());
 
         if (!ValidationUtil.isValidKeyId(cmbId)) {
-            String newKeyId = dbActionTemplate.getSequenceNumber(SEQ_IDENTIFIER_CMB, 15, PREFIX_CMB, "YYMM",
+            String newKeyId = dbActionTemplate.getSequenceNumber(SEQ_IDENTIFIER_CMB, 15, PREFIX_CMB, DATE_FORMAT,
                     FORMAT_RESET);
             newPlmcbmwocompdtl.setKeyid(newKeyId);
 
@@ -344,7 +395,7 @@ public class BalMonthlyPlanConfigServiceImpl implements BalMonthlyPlanConfigServ
 
         for (BalPlmTlObservations observation : observationsList) {
             BalPlmTlCalendar calendar = new BalPlmTlCalendar();
-            String newCalendarId = dbActionTemplate.getSequenceNumber(SEQ_IDENTIFIER_PMCALENDAR, 12,
+            String newCalendarId = dbActionTemplate.getSequenceNumber(SEQ_IDENTIFIER_PMCALENDAR, KEY_LENGTH,
                     PREFIX_PMCALENDAR, FORMAT_RESET, DATE_FORMAT);
             calendar.setKeyid(newCalendarId);
 
@@ -461,6 +512,44 @@ public class BalMonthlyPlanConfigServiceImpl implements BalMonthlyPlanConfigServ
         if (!ValidationUtil.isValidKeyId(date))
             return LocalDateTime.now();
         return LocalDateTime.now();
+    }
+
+    @Override
+    public EquipmentInfoDto getEquipmentInfo(String equipmentNo) throws Exception {
+        Map<String, Object> row = feedBackRepo.findEquipmentByNo(equipmentNo);
+
+        if (row == null) {
+            throw new Exception("Equipment not found: " + equipmentNo);
+        }
+
+        EquipmentInfoDto dto = new EquipmentInfoDto();
+        dto.setMachineid(row.get("machineid") != null ? row.get("machineid").toString() : null);
+        dto.setEquipmentNo(row.get("equipmentno") != null ? row.get("equipmentno").toString() : null);
+        dto.setEquipmentName(row.get("equipmentname") != null ? row.get("equipmentname").toString() : null);
+        dto.setFlid(row.get("flid") != null ? row.get("flid").toString() : null);
+        return dto;
+    }
+
+    @Override
+    public EquipmentFnlnDto getEquipmentByNoNEW(String equipmentNo) throws Exception {
+        Map<String, Object> row = feedBackRepo.findByEquipmentNoNEW(equipmentNo);
+
+        if (row == null) {
+            throw new Exception("Equipment not found: " + equipmentNo);
+        }
+
+        EquipmentFnlnDto dto = new EquipmentFnlnDto();
+        dto.setFnlnKeyid(row.get("fnlnkeyid") != null ? row.get("fnlnkeyid").toString() : null);
+        dto.setMachineid(row.get("machineid") != null ? row.get("machineid").toString() : null);
+        dto.setEquipmentName(row.get("equipmentname") != null ? row.get("equipmentname").toString() : null);
+        dto.setEquipmentNo(row.get("equipmentno") != null ? row.get("equipmentno").toString() : null);
+        dto.setCompKeyid(row.get("compkeyid") != null ? row.get("compkeyid").toString() : null);
+        dto.setLocnKeyid(row.get("locnkeyid") != null ? row.get("locnkeyid").toString() : null);
+        dto.setSbutKeyid(row.get("sbutkeyid") != null ? row.get("sbutkeyid").toString() : null);
+        dto.setPbutKeyid(row.get("pbutkeyid") != null ? row.get("pbutkeyid").toString() : null);
+        dto.setSectKeyid(row.get("sectkeyid") != null ? row.get("sectkeyid").toString() : null);
+        dto.setCellKeyid(row.get("cellkeyid") != null ? row.get("cellkeyid").toString() : null);
+        return dto;
     }
 
 }
