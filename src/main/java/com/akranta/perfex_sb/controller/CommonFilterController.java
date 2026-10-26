@@ -789,4 +789,295 @@ public ResponseEntity<List<DropDownDto>> getComplaintGalleryDefectPhenomenaCombo
         String shift = service.getCurrentShift(commonFilterDto);
         return ResponseEntity.ok(java.util.Collections.singletonMap("shift", shift != null ? shift : ""));
     }
+    //************************************************BAJAJ************************************ */
+    @PostMapping("/prv/Pmsd_Jobtype")
+    public ResponseEntity<List<DropDownDto>> getactivitytype(@RequestBody(required = false) CommonFilterDto commonFilterDto) 
+    {
+
+        return ResponseEntity.ok(service.getactivitytype(commonFilterDto));
+
+    }
+
+    // Assembly combo (machine or mould related, based on relatedTo)
+@PostMapping("/assembly")
+public ResponseEntity<List<DropDownDto>> getAssemblyCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto)
+{
+    return ResponseEntity.ok(service.getAssemblyComboList(commonFilterDto));
+}
+
+// PM Standards - Subassembly combo (filtered by assembly or machine)
+@PostMapping("/prv/Pmsd_SubassemblyId")
+public ResponseEntity<List<DropDownDto>> getPmsdSubassemblyIdCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto)
+{
+    return ResponseEntity.ok(service.getPmsdSubassemblyIdCombo(commonFilterDto));
+}
+    
+// Supplier combo
+@PostMapping("/supplier")
+public ResponseEntity<List<DropDownDto>> getSupplierCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto)
+{
+    return ResponseEntity.ok(service.getSupplierComboList(commonFilterDto));
+}
+
+@PostMapping("/prv/combo_pmsdMScondition")
+    public List<Map<String, String>> Standardsmscondition() {
+        return List.of(
+            Map.of("value", "S", "label", "SHUTDOWN"),
+            Map.of("value", "R", "label", " RUNNING")
+             
+        );
+    }
+    @PostMapping("/prv/combo_pmsdwhtfreq")
+    public List<Map<String, String>> pmsdwhtfreq() {
+        return List.of(
+            Map.of("value", "", "label", ""),
+            Map.of("value", "W", "label", " WEEKLY"),
+             Map.of("value", "F", "label", "FORTNIGHTLY"),
+              Map.of("value", "M", "label", " MONTHLY"),
+               Map.of("value", "Q", "label", " QUARTELY"),
+                Map.of("value", "H", "label", " HALFYEARLY"),
+                 Map.of("value", "Y", "label", " YEARLY")
+                
+        );
+    }
+
+    @PostMapping("/prv/source")
+    public List<Map<String, String>> source () {
+        return List.of(
+            Map.of("value", "I", "label", "Internal(Activity Done in House)"),
+            Map.of("value", "E", "label", "External(Activity Done with the help of supplier)")
+             
+        );
+    }
+
+    // Cost Centre combo (filtered by machine, cell, or factory in priority order)
+@PostMapping("/costCenter")
+public ResponseEntity<List<DropDownDto>> getCostCentreCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto)
+{
+    return ResponseEntity.ok(service.getCostCentreComboList(commonFilterDto));
+}
+    //CBM Inspection combo
+    @PostMapping("/prv/inspectionCombo")
+    public ResponseEntity<List<DropDownDto>> getCbmInspectionCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto) 
+    {
+
+        return ResponseEntity.ok(service.getCbmInspectionIdCombo(commonFilterDto));
+
+    }
+@PostMapping("/prv/actionrecommended")
+    public List<Map<String, String>> actionrecommended() {
+        return List.of(
+            Map.of("value", "Action Recommended1", "label", "Action Recommended1"),
+            Map.of("value", " Action Recommended2", "label", "  Action Recommended2"),
+            Map.of("value", " Action Recommended3", "label", "  Action Recommended3")
+             
+        );
+    }
+    //Spare Part No combo
+    @PostMapping("/sprpckup/combo_partno")
+    public ResponseEntity<List<DropDownDto>> getPartNoCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto) 
+    {
+
+        return ResponseEntity.ok(service.getPartNoCombo(commonFilterDto));
+
+    }
+    
+    //-----------------------------------clti----------------------------
+    @PostMapping("/baljhclit/combo_clitclassification")
+    public List<Map<String, String>> clticlassification() {
+        return List.of(
+            Map.of("value", "C", "label", "CLEAN"),
+            Map.of("value", "L", "label", " LUBE"),
+             Map.of("value", "I", "label", "INSPECT"),
+              Map.of("value", "T", "label", " TIGHTEN")
+               
+        );
+    }
+        //CLIT Trade combo
+    @PostMapping("/baljhclit/combo_clitTrade")
+    public ResponseEntity<List<DropDownDto>> getClitTradeCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto) 
+    {
+
+        return ResponseEntity.ok(service.getClitTradeCombo(commonFilterDto));
+
+    }
+     @PostMapping("/baljhclit/combo_clitwhtfreq")
+    public List<Map<String, String>> cltifrequency() {
+        return List.of(
+            Map.of("value", "S", "label", "SHIFTWISE"),
+            Map.of("value", "D", "label", " DAILY"),
+             Map.of("value", "W", "label", "WEEKLY"),
+              Map.of("value", "F", "label", " FORTNIGHTLY"),
+               Map.of("value", "M", "label", " MONTHLY"),
+                Map.of("value", "Q", "label", " QUARTELY")
+               
+        );
+    }
+
+        //CLIT Shift combo
+    @PostMapping("/baljhclit/combo_clitShift")
+    public ResponseEntity<List<DropDownDto>> getClitShiftCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto) 
+    {
+
+        return ResponseEntity.ok(service.getClitShiftCombo(commonFilterDto));
+
+    }
+        //CLIT Designation combo
+    @PostMapping("/baljhclit/combo_clitDesignation")
+    public ResponseEntity<List<DropDownDto>> getClitDesignationCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto) 
+    {
+
+        return ResponseEntity.ok(service.getClitDesignationCombo(commonFilterDto));
+
+    }
+
+     @PostMapping("/baljhclit/combo_clithowicon")
+    public List<Map<String, String>> cltihowicon() {
+        return List.of(
+            Map.of("value", "EYES", "label", "EYES"),
+            Map.of("value", "NOSE", "label", " NOSE"),
+             Map.of("value", "EAR", "label", "EAR"),
+              Map.of("value", "ORAL", "label", " ORAL"),
+               Map.of("value", "HAND", "label", "HAND")
+               
+               
+        );
+    }
+    //--------------------------------------------general maintenance--------------------------------------
+    @PostMapping("/balgenmain/GmntActivitytype")
+    public List<Map<String, String>> genactivity() {
+        return List.of(
+            Map.of("value", "O", "label", "OTHERS"),
+            Map.of("value", "U", "label", "UNSCHEDULED(WITHOUT WO)"),
+             Map.of("value", "M", "label", "EQUIPMENT UNDER TRIAL")
+              
+               
+               
+        );
+    }
+     @PostMapping("/balgenmain/combo_machinecondition")
+    public List<Map<String, String>> machinecondition() {
+        return List.of(
+            Map.of("value", "B", "label", "BOTH"),
+            Map.of("value", "S", "label", "SHUTDOWN"),
+             Map.of("value", "R", "label", "RUNNING ")
+              
+               
+               
+        );
+    }
+
+     @PostMapping("/balgenmain/combo_GmntStatus")
+    public List<Map<String, String>> gmntstatus() {
+        return List.of(
+            Map.of("value", "P", "label", "PENDING"),
+            Map.of("value", "C", "label", "COMPLETED")
+        );
+}
+
+    //SAP Order Type combo
+    @PostMapping("/sapinfo/sapOrderType")
+    public ResponseEntity<List<DropDownDto>> getSapOrderTypeCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto) 
+    {
+
+        return ResponseEntity.ok(service.getSapOrderTypeCombo(commonFilterDto));
+
+    }
+     @PostMapping("/balgenmain/Priority")
+    public List<Map<String, String>> priority() {
+        return List.of(
+            Map.of("value", "V", "label", " VERY HIGH"),
+            Map.of("value", "H", "label", " HIGH"),
+             Map.of("value", "M", "label", "MEDIUM"),
+              Map.of("value", "O", "label", " LOW")
+              
+               
+               
+        );
+    }
+    @PostMapping("/gmntShiftCombo")
+    public ResponseEntity<List<DropDownDto>> getGmntShiftCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto)
+    {
+        return ResponseEntity.ok(service.getGmntShiftCombo(commonFilterDto));
+    }
+    //------------------------------------breakdown----------------------------------------
+    @PostMapping("/subAssembly")
+    public ResponseEntity<List<DropDownDto>> getSubAssembly(
+            @RequestBody(required = false) CommonFilterDto commonFilterDto) {
+        return ResponseEntity.ok(service.getSubAssembly(commonFilterDto));
+    }
+        //Failure Type combo
+    @PostMapping("/Bbrdn/combo_failtype")
+    public ResponseEntity<List<DropDownDto>> getFailureTypeCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto) 
+    {
+
+        return ResponseEntity.ok(service.getFailureTypeCombo(commonFilterDto));
+
+    }
+        //Breakdown Classification combo
+    @PostMapping("/Bbrdn/combo_bdclfcn")
+    public ResponseEntity<List<DropDownDto>> getBdClassificationCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto) 
+    {
+
+        return ResponseEntity.ok(service.getBdClassificationCombo(commonFilterDto));
+
+    }
+        
+    
+    @PostMapping("/Bbrdn/combo_phenomena")
+    public ResponseEntity<List<DropDownDto>> getBdPhenomenaCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto) 
+    {
+
+        return ResponseEntity.ok(service.getBdPhenomenaCombo(commonFilterDto));
+
+    }
+        //Final Trade combo (Breakdown)
+    @PostMapping("/Bbrdn/combo_trade")
+    public ResponseEntity<List<DropDownDto>> getFinalTradeCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto) 
+    {
+
+        return ResponseEntity.ok(service.getFinalTradeCombo(commonFilterDto));
+
+    }
+        //Cause combo (Breakdown)
+    @PostMapping("/Bbrdn/combo_cause")
+    public ResponseEntity<List<DropDownDto>> getCauseCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto) 
+    {
+
+        return ResponseEntity.ok(service.getCauseCombo(commonFilterDto));
+
+    }
+    
+     @PostMapping("/Bbrdn/Activity")
+    public List<Map<String, String>> brdactivity() {
+        return List.of(
+            Map.of("value", "N", "label", " "),
+            Map.of("value", "B", "label", " Breakdown"),
+             Map.of("value", "M", "label", "Minor Stopage")
+                      
+               
+               
+        );
+    }
+     @PostMapping("/Bbrdn/Problemseverity")
+    public List<Map<String, String>> Problemseverity() {
+        return List.of(
+            Map.of("value", "N", "label", " "),
+            Map.of("value", "L", "label", " LINE STOPPER"),
+             Map.of("value", "U", "label", "URGENT"),
+              Map.of("value", "R", "label", "REQUIRES ATTENTION"),
+               Map.of("value", "H", "label", "HEALTH AND SAFETY")
+              
+               
+               
+        );
+    }
+        //Alarm combo (Breakdown)
+    @PostMapping("/Bbrdn/combo_alarm")
+    public ResponseEntity<List<DropDownDto>> getAlarmCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto) 
+    {
+
+        return ResponseEntity.ok(service.getAlarmCombo(commonFilterDto));
+
+    }
 }

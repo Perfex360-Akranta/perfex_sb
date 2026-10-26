@@ -100,19 +100,19 @@ public class DropDownController {
         // Map.of("value", "REJECTED", "label", "Rejected"));
     }
 
-    @PostMapping("/functional-location/company")
+    @GetMapping("/functional-location/company")
     public List<FunctionalLocationOptionDto> functionalLocationCompanies() {
         return dropdownService.getFunctionalCompanies();
     }
 
-    @PostMapping("/functional-location/location")
+    @GetMapping("/functional-location/location")
     public List<FunctionalLocationOptionDto> functionalLocationLocations(
             @RequestParam(required = false) String companyId) {
 
         return dropdownService.getFunctionalLocations(companyId);
     }
 
-    @PostMapping("/functional-location/sbu")
+    @GetMapping("/functional-location/sbu")
     public List<FunctionalLocationOptionDto> functionalLocationSbu(
             @RequestParam(required = false) String companyId,
             @RequestParam(required = false) String locationId) {
@@ -120,7 +120,7 @@ public class DropDownController {
         return dropdownService.getFunctionalSbus(companyId, locationId);
     }
 
-    @PostMapping("/functional-location/pbu")
+    @GetMapping ("/functional-location/pbu")
     public List<FunctionalLocationOptionDto> functionalLocationPbu(
             @RequestParam(required = false) String companyId,
             @RequestParam(required = false) String locationId,
@@ -129,7 +129,7 @@ public class DropDownController {
         return dropdownService.getFunctionalPbus(companyId, locationId, sbuId);
     }
 
-    @PostMapping("/functional-location/section")
+    @GetMapping("/functional-location/section")
     public List<FunctionalLocationOptionDto> functionalLocationSection(
             @RequestParam(required = false) String companyId,
             @RequestParam(required = false) String locationId,
@@ -139,7 +139,7 @@ public class DropDownController {
         return dropdownService.getFunctionalSections(companyId, locationId, sbuId, pbuId);
     }
 
-    @PostMapping("/functional-location/cell")
+    @GetMapping("/functional-location/cell")
     public List<FunctionalLocationOptionDto> functionalLocationCell(
             @RequestParam(required = false) String companyId,
             @RequestParam(required = false) String locationId,
@@ -150,7 +150,7 @@ public class DropDownController {
         return dropdownService.getFunctionalCells(companyId, locationId, sbuId, pbuId, sectionId);
     }
 
-    @PostMapping("/functional-location/machine")
+    @GetMapping("/functional-location/machine")
     public List<FunctionalLocationOptionDto> functionalLocationMachine(
             @RequestParam(required = false) String companyId,
             @RequestParam(required = false) String locationId,

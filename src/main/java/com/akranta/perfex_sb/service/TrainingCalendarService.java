@@ -70,9 +70,4 @@ public interface TrainingCalendarService {
                                                          AttendanceFilter filter) throws Exception;
 
     String checkAssessmentCompleted(String etcmKeyid) throws Exception;
-
-    public String resetAssessmentForMaintenance(String etcmKeyid) throws Exception;
-
-    public String getAssessmentComStatus(String etcmKeyid) throws Exception;
-    
 }

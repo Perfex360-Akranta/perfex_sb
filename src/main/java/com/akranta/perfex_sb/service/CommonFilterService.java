@@ -187,8 +187,30 @@ public List<DropDownDto> getMachineComboList(CommonFilterDto commonFilterDto);
 public List<DropDownDto> getUserRollComboList(CommonFilterDto commonFilterDto);
 
 public String getCurrentShift(CommonFilterDto commonFilterDto);
-
-
+//**********************************BAJAJ************************************/
+public List<DropDownDto> getactivitytype(CommonFilterDto commonFilterDto);
+public List<DropDownDto> getAssemblyComboList(CommonFilterDto commonFilterDto);
+public List<DropDownDto> getPmsdSubassemblyIdCombo(CommonFilterDto commonFilterDto);
+public List<DropDownDto> getSupplierComboList(CommonFilterDto commonFilterDto);
+public List<DropDownDto> getCostCentreComboList(CommonFilterDto commonFilterDto);
+public List<DropDownDto> getCbmInspectionIdCombo(CommonFilterDto commonFilterDto);
+public List<DropDownDto> getPartNoCombo(CommonFilterDto commonFilterDto);
+//---------------------------------------clti--------------------------------
+public List<DropDownDto> getClitTradeCombo(CommonFilterDto commonFilterDto);
+public List<DropDownDto> getClitShiftCombo(CommonFilterDto commonFilterDto);
+public List<DropDownDto> getClitDesignationCombo(CommonFilterDto commonFilterDto);
+//-----------------------------------generalmaintenance-----------------------------
+public List<DropDownDto> getSapOrderTypeCombo(CommonFilterDto commonFilterDto);
+//-----------------------------------------------------------
+public List<DropDownDto> getGmntShiftCombo(CommonFilterDto commonFilterDto);
+//--------------------------------------break down--------------------------------
+public List<DropDownDto> getSubAssembly(CommonFilterDto commonFilterDto);
+public List<DropDownDto> getFailureTypeCombo(CommonFilterDto commonFilterDto);
+public List<DropDownDto> getBdClassificationCombo(CommonFilterDto commonFilterDto);
+public List<DropDownDto> getBdPhenomenaCombo(CommonFilterDto commonFilterDto);
+public List<DropDownDto> getFinalTradeCombo(CommonFilterDto commonFilterDto);
+public List<DropDownDto> getCauseCombo(CommonFilterDto commonFilterDto);
+public List<DropDownDto> getAlarmCombo(CommonFilterDto commonFilterDto);
 
 
 

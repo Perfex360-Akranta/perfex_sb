@@ -788,24 +788,4 @@ public class TrainingCalendarController {
         map.put("etcmModifiedOn", m.getEtcmModifiedon());
         return map;
     }
-
-
-    @PutMapping("/{etcmKeyid}/assessment/reset")
-public Map<String, Object> resetAssessmentForMaintenance(@PathVariable String etcmKeyid) throws Exception {
-    String result = service.resetAssessmentForMaintenance(etcmKeyid);
-    Map<String, Object> resp = new HashMap<>();
-    resp.put("keyid", etcmKeyid);
-    resp.put("result", result);
-    resp.put("msg", "Training Calendar reopened for modification");
-    return resp;
-}
-@GetMapping("/{etcmKeyid}/assessment/status")
-public Map<String, Object> getAssessmentStatus(@PathVariable String etcmKeyid) throws Exception {
-    // pure read — no DB write, just check current etca_assessmentcom values
-    String cnt = service.getAssessmentComStatus(etcmKeyid);
-    Map<String, Object> resp = new HashMap<>();
-    resp.put("keyid", etcmKeyid);
-    resp.put("cnt", cnt);
-    return resp;
-}
 }

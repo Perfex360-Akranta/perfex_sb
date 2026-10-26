@@ -154,17 +154,12 @@ public class ApplicationMaintenenaceController {
 
     }
 
-    // @PostMapping("/abnClosure1")
-    // public void abnormalityClosure(@RequestBody AppMainAbnDto dto) {
-
-    //     service.abnormalityClosure(dto);
-
-    // }
-
     @PostMapping("/abnClosure")
-public void abnormalityClosure(@RequestBody List<AppMainAbnDto> dtoList) {
-    service.abnormalityClosure(dtoList);
-}
+    public void abnormalityClosure(@RequestBody AppMainAbnDto dto) {
+
+        service.abnormalityClosure(dto);
+
+    }
 
     @PostMapping("/actionPlanClosure")
     public void actPlanClosure(@RequestBody AppMainActPlanDto dto) {

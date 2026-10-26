@@ -37,8 +37,6 @@ public interface AppplicationMaintenanceService {
     void deleteLoss(String lossKeyId);
 
     void abnormalityClosure(AppMainAbnDto dto);
-    
-    void abnormalityClosure(List<AppMainAbnDto> dtoList);
 
     void actionPlanClosure(AppMainActPlanDto dto);
 

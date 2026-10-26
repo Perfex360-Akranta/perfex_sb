@@ -873,16 +873,8 @@ public class TrainingCalendarServiceImpl implements TrainingCalendarService {
         log.info("chkAssesmentComplted – key={}, empCnt={}, completedCnt={}, noAssessment={}", etcmKeyid, empCnt, completedCnt, noAssessment);
 
         if (completedCnt != empCnt) {
-            // NEW lines — DB la explicit ah N ku reset pannudhu
-        String resetSql = """
-            UPDATE ent_tl_trgcalempatscore
-           SET etca_assessmentcom = 'N'
-         WHERE etca_etcm_keyid = :key
-    """;
-    entityManager.createNativeQuery(resetSql).setParameter("key", etcmKeyid).executeUpdate();
             return "0";
         }
-
 
         // update assessment complete flag
         String updateSql = """
@@ -1439,50 +1431,4 @@ public class TrainingCalendarServiceImpl implements TrainingCalendarService {
             master.setEtcmCaldate(now);
         }
     }
-
-    @Override
-@Transactional
-public String resetAssessmentForMaintenance(String etcmKeyid) throws Exception {
-    if (isBlank(etcmKeyid)) {
-        return "0";
-    }
-
-    // Application Maintenance la uncheck panna, child-level assessment flag ah force N
-    String resetChildSql = """
-        UPDATE ent_tl_trgcalempatscore
-           SET etca_assessmentcom = 'N'
-         WHERE etca_etcm_keyid = :key
-    """;
-    entityManager.createNativeQuery(resetChildSql)
-            .setParameter("key", etcmKeyid.trim())
-            .executeUpdate();
-
-    // master status ah um N ah reset pannanum, appothaan Modification grid la varum
-    String resetMasterSql = """
-        UPDATE ent_tl_trgcalmst
-           SET etcm_chkcompleted = 'N'
-         WHERE etcm_keyid = :key
-    """;
-    entityManager.createNativeQuery(resetMasterSql)
-            .setParameter("key", etcmKeyid.trim())
-            .executeUpdate();
-
-    log.info("Application Maintenance reset – ETCA_ASSESSMENTCOM & ETCM_CHKCOMPLETED reset to 'N' for key={}", etcmKeyid);
-    return "1";
-}
-@Override
-@Transactional(readOnly = true)
-public String getAssessmentComStatus(String etcmKeyid) throws Exception {
-    if (isBlank(etcmKeyid)) return "0";
-    String sql = """
-        SELECT CASE WHEN COUNT(*) FILTER (WHERE etca_assessmentcom = 'Y') = COUNT(*) 
-                    AND COUNT(*) > 0 THEN '1' ELSE '0' END
-          FROM ent_tl_trgcalempatscore
-         WHERE etca_etcm_keyid = :key
-    """;
-    Object result = entityManager.createNativeQuery(sql)
-            .setParameter("key", etcmKeyid.trim())
-            .getSingleResult();
-    return result != null ? result.toString() : "0";
-}
 }

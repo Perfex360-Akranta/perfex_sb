@@ -504,4 +504,41 @@ public class CommonFilterRepository {
             return null;
         }
     }
+    public List<DropDownDto> getGmntShiftCombo(String atTime, String flId) {
+
+    StringBuilder sql = new StringBuilder();
+    sql.append(" SELECT DISTINCT ");
+    sql.append("   SFTM_KEYID AS VALUE, ");
+    sql.append("   SFTM_CODE AS LABEL ");
+    sql.append(" FROM GEN_TL_SHIFTMST ");
+    sql.append(" WHERE 1=1 ");
+    sql.append("   AND SFTM_ACTIVE = 'Y' ");
+    sql.append("   AND ( ");
+    sql.append("     (SFTM_STARTTIME <= SFTM_ENDTIME AND CAST(? AS TIME) BETWEEN SFTM_STARTTIME AND SFTM_ENDTIME) ");
+    sql.append("     OR ");
+    sql.append("     (SFTM_STARTTIME > SFTM_ENDTIME AND (CAST(? AS TIME) >= SFTM_STARTTIME OR CAST(? AS TIME) <= SFTM_ENDTIME)) ");
+    sql.append("   ) ");
+
+    List<Object> params = new ArrayList<>();
+    params.add(atTime);
+    params.add(atTime);
+    params.add(atTime);
+
+    if (ValidationUtil.isValidKeyId(flId)) {
+        sql.append(" AND SFTM_FLID = ? ");
+        params.add(flId);
+    }
+
+    sql.append(" ORDER BY LABEL ");
+
+    logger.info("Shift combo SQL {}", sql.toString());
+
+    return jdbcTemplate.query(
+            sql.toString(),
+            (rs, rowNum) -> new DropDownDto(
+                    rs.getString("VALUE"),
+                    rs.getString("LABEL")),
+            params.toArray()
+    );
+}
 }

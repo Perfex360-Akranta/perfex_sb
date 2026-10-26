@@ -438,7 +438,7 @@ public class DropDownService {
                         params.put("loginFlid", loginFlid);
                 }
 
-                sql.append(" ORDER BY label LIMIT 100 ");
+                sql.append(" ORDER BY label");
 
                 return executeFunctionalLocationOptionQuery(sql.toString(), params);
         }

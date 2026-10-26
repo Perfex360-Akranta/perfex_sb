@@ -173,22 +173,6 @@ public class AppplicationMaintenanceServiceImpl implements AppplicationMaintenan
     }
 
     @Override
-@Transactional
-public void abnormalityClosure(List<AppMainAbnDto> dtoList) {
-    for (AppMainAbnDto dto : dtoList) {
-        String counterMeasure = dto.getCounterMeasure();
-        LocalDateTime completedDate = dto.getCompletedDate();
-        String completedBy = dto.getCompletedBy();
-        String abnmKeyid = dto.getAbnmKeyid();
-        String status = dto.getStatus();
-
-        repo.updateAbnActionPlanDtl(status, counterMeasure, abnmKeyid);
-        repo.updateAbnActionPlanMst(status, abnmKeyid);
-        repo.updateAbnormality(status, counterMeasure, completedDate , completedBy, abnmKeyid);
-    }
-}
-
-    @Override
     @Transactional
     public void actionPlanClosure(AppMainActPlanDto dto) {
         String actionPlanId = dto.getActionPlanId();

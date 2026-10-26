@@ -2689,5 +2689,549 @@ public List<DropDownDto> getCheckingToolCombo(CommonFilterDto commonFilterDto)
         shiftId = repository.getCurrentShiftOvernightFallback();
         return ValidationUtil.isValidKeyId(shiftId) ? shiftId : "";
      }
-     
+     //********************************BAJAJ**************************** */
+
+      @Override
+     public List<DropDownDto> getactivitytype(CommonFilterDto commonFilterDto)
+     {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("BAL_PLM_TL_ACTIVITYTYPEMST");
+        comboFilter.setIdField("PMAM_CODE");
+        comboFilter.setNameField("PMAM_NAME");
+        comboFilter.setCondSql(" AND PMAM_ACTIVE = 'Y'"); 
+        comboFilter.setCodeField("PMAM_CODE");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+     }
+@Override
+public List<DropDownDto> getAssemblyComboList(CommonFilterDto commonFilterDto)
+{
+    ComboFilterDto comboFilter = new ComboFilterDto();
+    List<Object> params = new ArrayList<>(); 
+
+    String relatedTo = (commonFilterDto != null) ? commonFilterDto.getGetRelatedTo() : null;
+    String machineId = (commonFilterDto != null) ? commonFilterDto.getMachineId() : null;
+    String machineNotToShown = (commonFilterDto != null) ? commonFilterDto.getMachineNotToShown() : null;
+
+    logger.info("relatedTo={}, machineId={}, machineNotToShown={}", relatedTo, machineId, machineNotToShown);
+
+    StringBuilder condSql = new StringBuilder();
+
+    if (!ValidationUtil.isValidKeyId(relatedTo) || !"MLD".equals(relatedTo))
+    {
+        // Default: machine-related assembly
+        comboFilter.setTableName("GEN_VW_MCHASMLINK");
+        comboFilter.setIdField("ASSEMBLYID");
+        comboFilter.setNameField("ASSEMBLYNAME");
+
+        if (ValidationUtil.isValidKeyId(machineId))
+        {
+            condSql.append(" AND MACHINEID = ?");
+            params.add(machineId);
+        }
+        if (ValidationUtil.isValidKeyId(machineNotToShown))
+        {
+            condSql.append(" AND MACHINEID <> ?");
+            params.add(machineNotToShown);
+        }
+    }
+    else
+    {
+        // MLD: mould-related assembly
+        comboFilter.setTableName("GEN_TL_ASSEMBLYMST");
+        comboFilter.setIdField("ASSM_KEYID");
+        comboFilter.setNameField("ASSM_NAME");
+
+        condSql.append(" AND ASSM_RELATEDTO = 'MLD'");
+
+        if (ValidationUtil.isValidKeyId(machineId))
+        {
+            condSql.append("""
+                     AND ASSM_KEYID IN (
+                        SELECT FNLN_ORIGINALID
+                        FROM GEN_TL_FUNCTIONALLOCN
+                        WHERE INSTR(FNLN_ELEMENTID, ?, 1, 1) > 0
+                        AND FNLN_ELEMENTTYPE = 'A'
+                    )
+                    """);
+            params.add(machineId);
+        }
+        if (ValidationUtil.isValidKeyId(machineNotToShown))
+        {
+            condSql.append("""
+                     AND ASSM_KEYID NOT IN (
+                        SELECT FNLN_ORIGINALID
+                        FROM GEN_TL_FUNCTIONALLOCN
+                        WHERE INSTR(FNLN_ELEMENTID, ?, 1, 1) > 0
+                        AND FNLN_ELEMENTTYPE = 'A'
+                    )
+                    """);
+            params.add(machineNotToShown);
+        }
+    }
+
+    comboFilter.setOrderByField("LABEL");
+    comboFilter.setCondSql(condSql.toString());
+
+    return repository.fillComboValues(comboFilter, params.toArray());
+}
+ 
+
+@Override
+public List<DropDownDto> getPmsdSubassemblyIdCombo(CommonFilterDto commonFilterDto)
+{
+    ComboFilterDto comboFilter = new ComboFilterDto();
+    List<Object> params = new ArrayList<>();
+
+    String assmId = (commonFilterDto != null) ? commonFilterDto.getAssmId() : null;
+    String machineId = (commonFilterDto != null) ? commonFilterDto.getMachineId() : null;
+
+    logger.info("getPmsdSubassemblyIdCombo assmId={}, machineId={}", assmId, machineId);
+
+    comboFilter.setTableName("GEN_TL_SUBASSEMBLYMST");
+    comboFilter.setIdField("SBAM_KEYID");
+    comboFilter.setNameField("SBAM_NAME");
+    comboFilter.setOrderByField("LABEL");
+
+    StringBuilder condSql = new StringBuilder();
+    condSql.append(" AND SBAM_ACTIVE = 'Y'");
+
+    if (ValidationUtil.isValidKeyId(assmId))
+    {
+        // Assembly selected -> filter by assembly
+        condSql.append(" AND SBAM_ASSEMBLYID = ?");
+        params.add(assmId);
+    }
+    else if (ValidationUtil.isValidKeyId(machineId))
+    {
+        // Only machine selected -> show all subassemblies under that machine's assemblies
+        condSql.append("""
+                 AND SBAM_ASSEMBLYID IN (
+                    SELECT ASSEMBLYID FROM GEN_VW_MCHASMLINK
+                    WHERE MACHINEID = ?
+                )
+                """);
+        params.add(machineId);
+    }
+    // Neither selected -> show all
+
+    comboFilter.setCondSql(condSql.toString());
+
+    logger.info("getPmsdSubassemblyIdCombo condSql={}", condSql);
+
+    return repository.fillComboValues(comboFilter, params.toArray());
+}
+@Override
+public List<DropDownDto> getSupplierComboList(CommonFilterDto commonFilterDto)
+{
+    ComboFilterDto comboFilter = new ComboFilterDto();
+    List<Object> params = new ArrayList<>();
+
+    comboFilter.setTableName("GEN_TL_SUPPLIERMST");
+    comboFilter.setIdField("SUPM_KEYID");
+    comboFilter.setNameField("SUPM_NAME1");
+    comboFilter.setOrderByField("LABEL");
+
+    return repository.fillComboValues(comboFilter, params.toArray());
+}
+
+@Override
+public List<DropDownDto> getCostCentreComboList(CommonFilterDto commonFilterDto)
+{
+    ComboFilterDto comboFilter = new ComboFilterDto();
+    List<Object> params = new ArrayList<>();
+
+    String machineId = (commonFilterDto != null) ? commonFilterDto.getMachineId() : null;
+    String cellId = (commonFilterDto != null) ? commonFilterDto.getCellId() : null;
+    String factId = (commonFilterDto != null) ? commonFilterDto.getFactoryId() : null;
+
+    comboFilter.setTableName("GEN_TL_COSTCENTREMST");
+    comboFilter.setIdField("CSTM_KEYID");
+    comboFilter.setCodeField("CSTM_CODE");
+    comboFilter.setNameField("CSTM_NAME");
+    comboFilter.setOrderByField("LABEL");
+
+    StringBuilder subSql = new StringBuilder();
+    List<Object> subParams = new ArrayList<>();
+
+    if (ValidationUtil.isValidKeyId(machineId))
+    {
+        subSql.append("SELECT MCHM_COSTCENTREID FROM GEN_TL_MACHINEMST WHERE MCHM_KEYID = ?");
+        subParams.add(machineId);
+    }
+    else if (ValidationUtil.isValidKeyId(cellId))
+    {
+        subSql.append("SELECT CELL_COSTCENTREID FROM GEN_TL_CELLMST WHERE CELL_KEYID = ?");
+        subParams.add(cellId);
+    }
+    else if (ValidationUtil.isValidKeyId(factId))
+    {
+        subSql.append("""
+                SELECT CSTM_KEYID FROM GEN_TL_COSTCENTREMST
+                WHERE CSTM_ACTIVE = 'Y' AND CSTM_FACTORYID = ?
+                MINUS
+                SELECT DISTINCT CELL_COSTCENTREID FROM GEN_TL_CELLMST
+                """);
+        subParams.add(factId);
+
+        if (ValidationUtil.isValidKeyId(cellId))
+        {
+            subSql.append(" WHERE CELL_KEYID != ?");
+            subParams.add(cellId);
+        }
+    }
+
+    if (subSql.length() > 0)
+    {
+        comboFilter.setCondSql(" AND CSTM_KEYID IN ( " + subSql + " )");
+        params.addAll(subParams);
+    }
+
+    logger.info("getCostCentreComboList machineId={}, cellId={}, factId={}", machineId, cellId, factId);
+
+    return repository.fillComboValues(comboFilter, params.toArray());
+}
+     @Override
+     public List<DropDownDto> getCbmInspectionIdCombo(CommonFilterDto commonFilterDto)
+     {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("PLM_TL_INSPECTIONMST");
+        comboFilter.setIdField("INSM_KEYID");
+        comboFilter.setNameField("INSM_NAME");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+     }
+     @Override
+     public List<DropDownDto> getPartNoCombo(CommonFilterDto commonFilterDto)
+     {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("GEN_TL_SPARESMST");
+        comboFilter.setIdField("SPRM_KEYID");
+        comboFilter.setNameField("SPRM_PARTNAME");
+        comboFilter.setCodeField("SPRM_PARTNO");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+     }
+
+          @Override
+     public List<DropDownDto> getClitTradeCombo(CommonFilterDto commonFilterDto)
+     {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("GEN_TL_TRADEMST");
+        comboFilter.setIdField("TRDM_KEYID");
+        comboFilter.setCodeField("TRDM_CODE");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+     }
+          @Override
+     public List<DropDownDto> getClitShiftCombo(CommonFilterDto commonFilterDto)
+     {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("GEN_TL_SHIFTMST");
+        comboFilter.setIdField("SFTM_KEYID");
+        comboFilter.setNameField("SFTM_NAME");
+        comboFilter.setCodeField("SFTM_CODE");
+
+        String factId = (commonFilterDto != null) ? commonFilterDto.getFactId() : null;
+
+        if (ValidationUtil.isValidKeyId(factId)) {
+            comboFilter.setCondSql(" AND SFTM_FACTORYID = ? ");
+            params.add(factId);
+        }
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+     }
+          @Override
+     public List<DropDownDto> getClitDesignationCombo(CommonFilterDto commonFilterDto)
+     {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("GEN_TL_DESIGNATIONMST");
+        comboFilter.setIdField("DESG_KEYID");
+        comboFilter.setNameField("DESG_NAME");
+        comboFilter.setCodeField("DESG_CODE");
+
+        String desgId = (commonFilterDto != null) ? commonFilterDto.getDesgId() : null;
+
+        if (ValidationUtil.isValidKeyId(desgId)) {
+            comboFilter.setCondSql(" AND DESG_KEYID = ? ");
+            params.add(desgId);
+        }
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+     }
+//------------------------------------general maintenance -----------------------------------
+     @Override
+     public List<DropDownDto> getSapOrderTypeCombo(CommonFilterDto commonFilterDto)
+     {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("BAL_SAP_TL_MAINTORDERTYPE");
+        comboFilter.setIdField("SMT_KEYID");
+        comboFilter.setNameField("SMT_DESCRIPTION");
+        comboFilter.setCodeField("SMT_CODE");
+
+        String docType = (commonFilterDto != null) ? commonFilterDto.getDocType() : null;
+
+        StringBuilder condSql = new StringBuilder();
+
+        // Null-safe: the legacy docType.equals(...) would throw a
+        // NullPointerException when docType was missing.
+        if ("BDM".equals(docType)) {
+            condSql.append(" AND SMT_CODE = 'PM01' ");
+        } else if ("PM".equals(docType)) {
+            condSql.append(" AND SMT_CODE = 'PM02' ");
+        } else if ("GEN".equals(docType)) {
+            condSql.append("AND SMT_CODE = 'PM02'");
+        }
+
+        comboFilter.setCondSql(condSql.toString());
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+     }
+     @Override
+public List<DropDownDto> getGmntShiftCombo(CommonFilterDto commonFilterDto)
+{
+    String atTime = ValidationUtil.isValidKeyId(commonFilterDto.getAtTime())
+            ? commonFilterDto.getAtTime()
+            : java.time.LocalTime.now().toString();
+
+    return repository.getGmntShiftCombo(atTime, commonFilterDto.getFlId());
+}
+//---------------------------------------------breakdown-----------------------------------
+@Override
+    public List<DropDownDto> getSubAssembly(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        /*
+         * SubAssembly dropdown configuration - filtered by selected assembly
+         */
+
+        comboFilter.setTableName("GEN_TL_SUBASSEMBLYMST");
+
+        comboFilter.setIdField("SBAM_KEYID");
+
+        comboFilter.setNameField("TRIM(SBAM_NAME)");
+
+        comboFilter.setCodeField("TRIM(SBAM_CODE)");
+
+        comboFilter.setOrderByField("LABEL");
+
+        String assemblyKeyId = commonFilterDto != null ? commonFilterDto.getAssemblyKeyId() : null;
+
+        if (ValidationUtil.isValidKeyId(assemblyKeyId)) {
+
+            comboFilter.setCondSql("""
+                    AND SBAM_ASSEMBLYID = ?
+                    AND SBAM_ACTIVE = 'Y'
+                    """);
+
+            params.add(assemblyKeyId);
+
+        } else {
+
+            // assembly illama call panna empty list return pannuvom
+            return new ArrayList<>();
+        }
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+         @Override
+     public List<DropDownDto> getFailureTypeCombo(CommonFilterDto commonFilterDto)
+     {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("BDM_TL_FAILURETYPEMST");
+        comboFilter.setIdField("FLTM_KEYID");
+        comboFilter.setNameField("FLTM_NAME");
+        comboFilter.setCodeField("FLTM_CODE");
+
+        String relatedTo = (commonFilterDto != null) ? commonFilterDto.getRelatedTo() : null;
+
+        if (ValidationUtil.isValidKeyId(relatedTo)) {
+            comboFilter.setCondSql(" AND FLTM_RELATEDTO = ? ");
+            params.add(relatedTo);
+        }
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+     }
+          @Override
+     public List<DropDownDto> getBdClassificationCombo(CommonFilterDto commonFilterDto)
+     {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("BAL_BDM_VW_CLASSIFICATION");
+        comboFilter.setIdField("BCLM_KEYID");
+        comboFilter.setNameField("BCLM_NAME");
+
+        String pillar = (commonFilterDto != null) ? commonFilterDto.getPillar() : null;
+
+        // NOTE: matches legacy exactly. The BCLM_ACTIVE = 'Y' check is only
+        // applied together with the pillar filter. With no pillar, no
+        // condition is added at all and inactive rows are returned too.
+        if (ValidationUtil.isValidKeyId(pillar)) {
+            comboFilter.setCondSql(" AND BCLM_ACTIVE = 'Y' AND TPMP_CODE = ? ");
+            params.add(pillar);
+        }
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+     }
+    //       @Override
+    //  public List<DropDownDto> getBdPhenomenaCombo(CommonFilterDto commonFilterDto)
+    //  {
+    //     ComboFilterDto comboFilter = new ComboFilterDto();
+    //     List<Object> params = new ArrayList<>();
+
+    //     String assmId = (commonFilterDto != null) ? commonFilterDto.getAssmId() : null;
+    //     String mchId = (commonFilterDto != null) ? commonFilterDto.getMchId() : null;
+    //     String mldId = (commonFilterDto != null) ? commonFilterDto.getMldId() : null;
+
+    //     // Same key-building as the legacy servlet: "<mchId>-<assmId>", or
+    //     // "MLD-<mldId>" which overrides it. The legacy code produced the
+    //     // string "null-<assmId>" when mchId was missing; guarded here.
+    //     String key = mchId;
+    //     if (ValidationUtil.isValidKeyId(assmId) && ValidationUtil.isValidKeyId(mchId)) {
+    //         key = mchId + "-" + assmId;
+    //     }
+    //     if (ValidationUtil.isValidKeyId(mldId)) {
+    //         key = "MLD-" + mldId;
+    //     }
+
+    //     StringBuilder condSql = new StringBuilder();
+
+    //     if (!ValidationUtil.isValidKeyId(key)) {
+
+    //         // No machine/mould: plain phenomena master, breakdown type only
+    //         comboFilter.setTableName("BDM_TL_PHENOMENAMST");
+    //         comboFilter.setIdField("BPHM_KEYID");
+    //         comboFilter.setNameField("BPHM_PHENOMENANAME");
+    //         condSql.append(" AND BPHM_PHENOMENATYPE = 'BD' ");
+
+    //     } else {
+
+    //         String[] condFlag = key.split("-");
+
+    //         if ("MLD".equals(condFlag[0])) {
+
+    //             comboFilter.setTableName("GEN_TL_MOULDPHENLINK, BDM_TL_PHENOMENAMST");
+    //             comboFilter.setIdField("MPHL_BPHMID");
+    //             comboFilter.setNameField("BPHM_PHENOMENANAME");
+    //             condSql.append(" AND MPHL_BPHMID = BPHM_KEYID AND MPHL_MOULDID = ? ");
+    //             params.add(condFlag.length > 1 ? condFlag[1] : "");
+
+    //         } else {
+
+    //             comboFilter.setTableName("BAL_BDM_VW_PHNCASLAYOUT");
+    //             comboFilter.setIdField("PCT_ORGINALID");
+    //             comboFilter.setNameField("PCT_DISPLAYCODE");
+    //             condSql.append(" AND PCT_ELEMENTID LIKE ? AND PCT_ELEMENTTYPE = 'PHN' ");
+    //             params.add("%" + key + "%");
+    //         }
+    //     }
+
+    //     comboFilter.setCondSql(condSql.toString());
+
+    //     return repository.fillComboValues(comboFilter, params.toArray());
+    //  }
+        @Override
+    public List<DropDownDto> getBdPhenomenaCombo(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        String assmId = (commonFilterDto != null) ? commonFilterDto.getAssmId() : null;
+        String mldId = (commonFilterDto != null) ? commonFilterDto.getMldId() : null;
+
+        StringBuilder condSql = new StringBuilder();
+
+        if (ValidationUtil.isValidKeyId(mldId)) {
+
+            // Mould based phenomena (legacy logic appadiye)
+            comboFilter.setTableName("GEN_TL_MOULDPHENLINK, BDM_TL_PHENOMENAMST");
+            comboFilter.setIdField("MPHL_BPHMID");
+            comboFilter.setNameField("BPHM_PHENOMENANAME");
+            condSql.append(" AND MPHL_BPHMID = BPHM_KEYID AND MPHL_MOULDID = ? ");
+            params.add(mldId);
+
+        } else if (ValidationUtil.isValidKeyId(assmId)) {
+
+            // Assembly based phenomena - direct from master table (no view)
+            comboFilter.setTableName("BDM_TL_PHENOMENAMST");
+            comboFilter.setIdField("BPHM_KEYID");
+            comboFilter.setNameField("BPHM_PHENOMENANAME");
+            condSql.append(" AND BPHM_PHENOMENATYPE = 'BD' ")
+                   .append(" AND BPHM_ACTIVE = 'Y' ")
+                   .append(" AND BPHM_ASSEMBLYID = ? ");
+            params.add(assmId);
+
+        } else {
+
+            // assembly select pannala -> empty list
+            return new ArrayList<>();
+        }
+
+        comboFilter.setCondSql(condSql.toString());
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+          @Override
+     public List<DropDownDto> getFinalTradeCombo(CommonFilterDto commonFilterDto)
+     {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("GEN_TL_TRADEMST");
+        comboFilter.setIdField("TRDM_KEYID");
+        comboFilter.setNameField("TRDM_NAME");
+        comboFilter.setCodeField("TRDM_CODE");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+     }
+          @Override
+     public List<DropDownDto> getCauseCombo(CommonFilterDto commonFilterDto)
+     {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("BDM_TL_CAUSEMST");
+        comboFilter.setIdField("BCSM_KEYID");
+        comboFilter.setNameField("BCSM_NAME");
+
+        String phenId = (commonFilterDto != null) ? commonFilterDto.getPhenId() : null;
+
+        // NOTE: the assmId filter (POSITION of assmId in BPCL_PARENTID) is
+        // commented out in the legacy source, so it is not ported.
+        if (ValidationUtil.isValidKeyId(phenId)) {
+            comboFilter.setCondSql(" AND BCSM_PHENOMENAID = ? ");
+            params.add(phenId);
+        }
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+     }
+          @Override
+     public List<DropDownDto> getAlarmCombo(CommonFilterDto commonFilterDto)
+     {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("BDM_TL_ALARMMST");
+        comboFilter.setIdField("BALM_KEYID");
+        comboFilter.setCodeField("BALM_NAME");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+     }
 }

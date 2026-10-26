@@ -9,8 +9,11 @@ public class CommonFilterDto {
     private String companyId;
     private String comboKey;
     private String flId;
+    private String getRelatedTo;
+    private String relatedTo;
+    private String pillar;
+    private String phenId;
 
- 
     //Abnormality Dropdowns
     private String abnormalityTypeId;
     private String abnmOthers;
@@ -69,10 +72,82 @@ private String eqpSubGrpId;
 private String circleId;
 //private String cellid2; // note: distinct casing from existing cellId — see below
 private String mouldId;
+ private String uomId;
 private String othersFlag;
 //private String pillarCode;
+private String factId;
+private String desgId;
+private String docType;
+private String atTime;
+private String assemblyKeyId;
+ private String processId;
+ private String mldId;
+
+public String getAssemblyKeyId() {
+    return assemblyKeyId;
+}
+public void setAssemblyKeyId(String assemblyKeyId) {
+    this.assemblyKeyId = assemblyKeyId;
+}
+public String getPillar() {
+        return pillar;
+    }
+    public void setPillar(String pillar) {
+        this.pillar = pillar;
+    }
+    public String getRelatedTo() {
+        return relatedTo;
+    }
+    public void setRelatedTo(String relatedTo) {
+        this.relatedTo = relatedTo;
+    }
+    public String getGetRelatedTo() {
+        return getRelatedTo;
+    }
+    public void setGetRelatedTo(String getRelatedTo) {
+        this.getRelatedTo = getRelatedTo;
+    }
+
+ public String getPhenId() {
+        return phenId;
+    }
+    public void setPhenId(String phenId) {
+        this.phenId = phenId;
+    }
 
 
+ 
+    
+    public String getMldId() {
+    return mldId;
+}
+public void setMldId(String mldId) {
+    this.mldId = mldId;
+}
+  public String getAtTime() {
+    return atTime;
+}
+public void setAtTime(String atTime) {
+    this.atTime = atTime;
+}
+  public String getDocType() {
+    return docType;
+}
+public void setDocType(String docType) {
+    this.docType = docType;
+}
+  public String getDesgId() {
+    return desgId;
+}
+public void setDesgId(String desgId) {
+    this.desgId = desgId;
+}
+  public String getFactId() {
+    return factId;
+}
+public void setFactId(String factId) {
+    this.factId = factId;
+}
   public String getOthersFlag() {
     return othersFlag;
 }
@@ -133,10 +208,10 @@ public void setMouldId(String mouldId) {
     public void setDefectMode(String defectMode) {
         this.defectMode = defectMode;
     }
-  private String uomId;
+ 
 
 //Process FMEA Dropdowns
-    private String processId;
+   
     //Equipment FMEA Dropdowns
     //private String cellid;
    
