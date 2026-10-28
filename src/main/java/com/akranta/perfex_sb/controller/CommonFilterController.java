@@ -1080,4 +1080,36 @@ public ResponseEntity<List<DropDownDto>> getCostCentreCombo(@RequestBody(require
         return ResponseEntity.ok(service.getAlarmCombo(commonFilterDto));
 
     }
+    //---------------------------------------------otg routing screen ------------------------------------
+    @PostMapping("/otg/status")
+    public List<Map<String, String>> otgstatus() {
+        return List.of(
+            Map.of("value", "N", "label", "Pending"),
+            Map.of("value", "Y", "label", "Submited"),
+             Map.of("value", "C", "label", "Converted"),
+              Map.of("value", "R", "label", "Rejected")                   
+                             
+        );
+    }
+     @PostMapping("/otg/type")
+    public List<Map<String, String>> otgtype() {
+        return List.of(
+            Map.of("value", "OPL", "label", "OPL"),
+            Map.of("value", "ABN", "label", "ABN"),
+             Map.of("value", "KZN", "label", "KZN"),
+              Map.of("value", "APL", "label", "APL")
+                         
+               
+               
+        );
+    }
+     @PostMapping("/otg/accept")
+    public List<Map<String, String>> otgpriority() {
+        return List.of(
+            
+            Map.of("value", "Y", "label", "YES"),
+            Map.of("value", "R", "label", "NO")
+
+        );
+    }
 }
