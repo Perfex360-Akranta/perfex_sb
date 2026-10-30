@@ -49,5 +49,19 @@ public interface GenTlActionplanmstRepository  extends JpaRepository<GenTlAction
        DELETE from GEN_TL_ACTIONPLANMST a where NOT EXISTS ( select APLD_APLM_KEYID from GEN_TL_ACTIONPLANDTL  where APLD_APLM_KEYID = a.APLM_KEYID  and APLD_APLM_KEYID = :keyid ) 	and  APLM_KEYID = :keyid
         """, nativeQuery = true)
     int DeleteActionPlanMSt(@Param("keyid") String keyid);
+     @Modifying
+    
+    @Query(value = """
+            UPDATE GEN_TL_OTGCAPTURE
+               SET OTGC_STATUS = 'C'
+             WHERE OTGC_KEYID IN (
+                   SELECT APLM_MASTERREFID
+                     FROM gen_tl_actionplanmst
+                    WHERE APLM_KEYID = :keyid
+                      AND APLM_REFDOCTYPE = 'OTG'
+             )
+            """, nativeQuery = true)
+    int updateOtgCaptureStatusCompleted(@Param("keyid") String keyid);
+
 
 }

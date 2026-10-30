@@ -1094,10 +1094,10 @@ public ResponseEntity<List<DropDownDto>> getCostCentreCombo(@RequestBody(require
      @PostMapping("/otg/type")
     public List<Map<String, String>> otgtype() {
         return List.of(
-            Map.of("value", "OPL", "label", "OPL"),
-            Map.of("value", "ABN", "label", "ABN"),
-             Map.of("value", "KZN", "label", "KZN"),
-              Map.of("value", "APL", "label", "APL")
+            Map.of("value", "OPL", "label", "One point lesson"),
+            Map.of("value", "ABN", "label", "Abnormality"),
+             Map.of("value", "KZN", "label", "Kaizen"),
+              Map.of("value", "APL", "label", "Action plan")
                          
                
                
@@ -1109,6 +1109,16 @@ public ResponseEntity<List<DropDownDto>> getCostCentreCombo(@RequestBody(require
             
             Map.of("value", "Y", "label", "YES"),
             Map.of("value", "R", "label", "NO")
+
+        );
+    }
+    //-----------------------action plan --------------------------
+    @PostMapping("/api/combo_status")
+    public List<Map<String, String>> combostatus() {
+        return List.of(
+            
+            Map.of("value", "P", "label", "Pending"),
+            Map.of("value", "C", "label", "Completed")
 
         );
     }

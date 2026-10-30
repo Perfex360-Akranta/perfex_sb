@@ -177,6 +177,15 @@ public class ActionPlanServiceImpl implements ActionPlanService {
             logger.error("Error Deleting Action Plan : {}", e.getMessage(), e);
         }
     }
-
+//mano for capture 
+@Transactional
+public int updateOtgCaptureStatus(String keyid) {
+    if (!mstRepository.existsById(keyid)) {
+        throw new RuntimeException("actionplan not found: " + keyid);
+    }
+    int rows = mstRepository.updateOtgCaptureStatusCompleted(keyid);
+    logger.info("OTG capture status set to C for actionplan {} (rows updated: {})", keyid, rows);
+    return rows;
+}
 
 }

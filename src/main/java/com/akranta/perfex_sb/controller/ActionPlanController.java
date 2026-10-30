@@ -44,4 +44,10 @@ public class ActionPlanController {
 
         return  ResponseEntity.status(HttpStatus.OK).body("Deleted");
     }
+    @PostMapping("/updateOtgStatus/{keyId}")
+    public ResponseEntity<?> updateOtgStatus(@PathVariable String keyId) {
+        int rows = actionPlanService.updateOtgCaptureStatus(keyId);
+        return ResponseEntity.status(HttpStatus.OK).body(Map.of("keyId", keyId, "rowsUpdated", rows));
+    }
+
 }

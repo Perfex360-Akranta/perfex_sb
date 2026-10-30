@@ -197,5 +197,14 @@ public AbnTlAbnormality updateAbnormality(@RequestBody AbnCompletionDto dto) {
     return updateEntity;
      
 }
-
+//mano for capture 
+@Transactional
+public int updateOtgCaptureStatus(String keyid) {
+    if (!repository.existsById(keyid)) {
+        throw new RuntimeException("Abnormality not found: " + keyid);
+    }
+    int rows = repository.updateOtgCaptureStatusCompleted(keyid);
+    logger.info("OTG capture status set to C for abnormality {} (rows updated: {})", keyid, rows);
+    return rows;
+}
 }

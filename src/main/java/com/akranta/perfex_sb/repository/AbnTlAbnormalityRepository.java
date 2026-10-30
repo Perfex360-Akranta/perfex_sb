@@ -100,4 +100,19 @@ public interface AbnTlAbnormalityRepository  extends JpaRepository<AbnTlAbnormal
                         AND ABNM_KEYID IN (:abnKeyIds) ORDER BY hdnAbnmdKeyid  
         """, nativeQuery = true)
     List<Map<String, Object>> findMultipleAbn(@Param("abnKeyIds") List<String> abnKeyIds);
+	//mano
+	 @Modifying
+    @Transactional
+    @Query(value = """
+            UPDATE GEN_TL_OTGCAPTURE
+               SET OTGC_STATUS = 'C'
+             WHERE OTGC_KEYID IN (
+                   SELECT ABNM_REFDOCID
+                     FROM ABN_TL_ABNORMALITY
+                    WHERE ABNM_KEYID = :keyid
+                      AND ABNM_REFDOCTYPE = 'OTG'
+             )
+            """, nativeQuery = true)
+    int updateOtgCaptureStatusCompleted(@Param("keyid") String keyid);
+
 }

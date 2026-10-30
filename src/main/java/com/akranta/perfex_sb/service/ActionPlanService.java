@@ -11,4 +11,7 @@ public interface ActionPlanService {
     ResponseEntity<ActionPlanSaveDto>  save(ActionPlanSaveDto actionPlanSaveDto);
     public void saveCompletion(List<ActionPlanCompDto> actionPlanCompDto);
     public void deleteActionplan(String keyid , String masterKeyid);
+    //mano 
+    public int updateOtgCaptureStatus(String keyid);
+    
 }

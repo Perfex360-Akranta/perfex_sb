@@ -101,5 +101,11 @@ public ResponseEntity<?> updateAbnormality(@RequestBody AbnCompletionDto dto) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
+//mano(for otg update)
+@PostMapping("/updateOtgStatus/{keyId}")
+    public ResponseEntity<?> updateOtgStatus(@PathVariable String keyId) {
+        int rows = abnService.updateOtgCaptureStatus(keyId);
+        return ResponseEntity.status(HttpStatus.OK).body(Map.of("keyId", keyId, "rowsUpdated", rows));
+    }
 
 }
