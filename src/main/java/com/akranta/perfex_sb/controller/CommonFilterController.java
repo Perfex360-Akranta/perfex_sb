@@ -1122,4 +1122,15 @@ public ResponseEntity<List<DropDownDto>> getCostCentreCombo(@RequestBody(require
 
         );
     }
+      @PostMapping("/abn/completion_status")
+    public List<Map<String, String>> completionstatus() {
+        return List.of(
+            
+            Map.of("value", "P", "label", "Pending"),
+            Map.of("value", "W", "label", "Work in progress"),
+            Map.of("value", "C", "label", "Complete")
+
+        );
+    }
+
 }
