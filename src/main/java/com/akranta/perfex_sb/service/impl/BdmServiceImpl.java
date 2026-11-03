@@ -1841,6 +1841,7 @@ public int deleteOtherCostActual(String woid, String requestedby, String otherco
             throw new ResourceNotFoundException("BDM Detail not found for bdms_keyid: " + bdmsKeyid);
         }
         logger.info("Fetched BDM Detail for bdms_keyid: {}", bdmsKeyid);
+         logger.info("Fetched BDM Detail for bdms_keyid: {}", bdmsKeyid);
         return details.get(0);
     }
 
