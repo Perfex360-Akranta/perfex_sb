@@ -18,6 +18,9 @@ import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 // import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -206,5 +209,18 @@ public int updateOtgCaptureStatus(String keyid) {
     int rows = repository.updateOtgCaptureStatusCompleted(keyid);
     logger.info("OTG capture status set to C for abnormality {} (rows updated: {})", keyid, rows);
     return rows;
+}
+
+
+public String fillTargetDate(String cnfmCode) 
+{
+    String number = repository.getWhiteTarget(cnfmCode);
+
+LocalDate date = LocalDate.now().plusDays(Long.parseLong(number));
+
+return date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+
+    
 }
 }

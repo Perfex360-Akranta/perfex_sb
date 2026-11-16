@@ -15,6 +15,8 @@ public class MenuTreeRecordDto {
     private boolean master;
     private String reportFileName;
 
+    private String angularPath;
+
     public String getMenuNumber() { return menuNumber; }
     public void setMenuNumber(String menuNumber) { this.menuNumber = menuNumber; }
 
@@ -50,4 +52,13 @@ public class MenuTreeRecordDto {
 
     public void setReportFileName(String reportFileName) { this.reportFileName = reportFileName; }
     public String getReportFileName() { return reportFileName; }
+    public String getAngularPath() {
+        return angularPath;
+    }
+    public void setAngularPath(String angularPath) {
+        this.angularPath = angularPath;
+    }
+
+
+    
 }

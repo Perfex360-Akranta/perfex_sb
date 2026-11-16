@@ -72,6 +72,8 @@ public class MenuTreeServiceImpl implements MenuTreeService {
         String tableName = stripBraces(getMapString(row, "mnum_tablename"));
         record.setFilterNeed(tableName.isEmpty() ? 'N' : tableName.charAt(0));
 
+        record.setAngularPath(getMapString(row, "mnum_angularpath"));
+
         return record;
     }
 

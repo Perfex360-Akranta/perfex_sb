@@ -1,6 +1,7 @@
 package com.akranta.perfex_sb.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,9 @@ public class DbActionTemplate {
 
     @Autowired
     private DataSource dataSource;
+
+      private final JdbcTemplate jdbc;
+    public DbActionTemplate(JdbcTemplate jdbc) {this.jdbc=jdbc;}
 
     public String getSequenceNumber(String tableName, int keyLength, String preFix, String dateFormat, String formatReset) throws Exception {
         Connection connection = null;
@@ -81,5 +85,19 @@ public class DbActionTemplate {
         } catch (SQLException e) {
             logger.error("Error closing database connections: {}", e.getMessage(), e);
         }
+    }
+
+     // A shared row lock serializes master changes, preserving at least one active
+    // master.
+    public void lockUserAdministration() {
+        jdbc.queryForObject(
+                "select seqg_latestvalue from gen_tl_seqnogen where seqg_formname='ADM_TL_USERMST' for update",
+                Long.class);
+    }
+
+    public void lockEscalationConfiguration() {
+        jdbc.queryForObject(
+                "select seqg_latestvalue from gen_tl_seqnogen where seqg_formname='ADM_TL_ESCALATIONCONFIG' for update",
+                Long.class);
     }
 }

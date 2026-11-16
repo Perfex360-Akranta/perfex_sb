@@ -108,4 +108,11 @@ public ResponseEntity<?> updateAbnormality(@RequestBody AbnCompletionDto dto) {
         return ResponseEntity.status(HttpStatus.OK).body(Map.of("keyId", keyId, "rowsUpdated", rows));
     }
 
+    //mano(for otg update)
+@GetMapping("/Datebox_FillTargetDate")
+    public ResponseEntity<?> fillTargetDate(@RequestParam String cnfmCode) {
+        String date = abnService.fillTargetDate(cnfmCode);
+        return ResponseEntity.status(HttpStatus.OK).body(date);
+    }
+
 }

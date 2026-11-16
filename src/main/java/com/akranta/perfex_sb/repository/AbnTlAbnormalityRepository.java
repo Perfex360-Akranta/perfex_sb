@@ -115,4 +115,8 @@ public interface AbnTlAbnormalityRepository  extends JpaRepository<AbnTlAbnormal
             """, nativeQuery = true)
     int updateOtgCaptureStatusCompleted(@Param("keyid") String keyid);
 
+
+	@Query(value = "SELECT CNFM_SETTINGVALUE FROM ADM_TL_CONFIGURATIONMST WHERE CNFM_CODE = :code", nativeQuery = true)
+String getWhiteTarget(@Param("code") String code);
+
 }
