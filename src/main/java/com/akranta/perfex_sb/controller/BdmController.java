@@ -616,4 +616,17 @@ public ResponseEntity<Void> deleteOtherCostActual(
             return ResponseEntity.internalServerError().build();
         }
     }
+     @GetMapping("/emp-cost/{empId}")
+    public ResponseEntity<List<Map<String, Object>>> getEmpCost(@PathVariable String empId) {
+        logger.info("getEmpCost called – empId={}", empId);
+        try {
+            return ResponseEntity.ok(service.getEmpCost(empId));
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid input: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            logger.error("Error fetching emp cost: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 }

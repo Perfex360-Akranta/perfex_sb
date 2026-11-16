@@ -1913,4 +1913,15 @@ public int deleteOtherCostActual(String woid, String requestedby, String otherco
             throw e;
         }
     }
+
+     @Override
+    public List<Map<String, Object>> getEmpCost(String empId) throws Exception {
+        if (empId == null || empId.trim().isEmpty()) {
+            throw new IllegalArgumentException("empId is required");
+        }
+        List<Map<String, Object>> result = manpowercostactualRepository.getEmpCost(empId);
+        logger.info("Fetched emp cost for empId: {}, rows: {}", empId, result.size());
+        return result;
+    }
+
 }

@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import java.util.List;
+import java.util.Map;
 
 public interface BAL_WomTlManpowercostactualRepository
         extends JpaRepository<BAL_WomTlManpowercostactual, BAL_WomTlManpowercostactualId> {
@@ -16,4 +18,13 @@ public interface BAL_WomTlManpowercostactualRepository
     int deleteByCompositeKey(@Param("maintwoid") String maintwoid,
                               @Param("manpowerid") String manpowerid,
                               @Param("skillid") String skillid);
+
+                                @Query(value = """
+        SELECT EMPM_EMPLOYEENUMBER, EMPM_NAME, EMPC_COSTPERHOUR, EMPC_OTCOSTPERHOUR, EMPC_CALLOUTCOSTPERHOUR
+        FROM GEN_TL_EMPLOYEEMST
+        LEFT JOIN GEN_TL_EMPLOYEECOST ON EMPC_EMPLOYEEID = EMPM_KEYID AND EMPC_ACTIVE = 'Y'
+        WHERE EMPM_KEYID = :empId
+        """, nativeQuery = true)
+    List<Map<String, Object>> getEmpCost(@Param("empId") String empId);
+
 }

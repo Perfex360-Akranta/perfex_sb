@@ -3234,4 +3234,17 @@ public List<DropDownDto> getGmntShiftCombo(CommonFilterDto commonFilterDto)
 
         return repository.fillComboValues(comboFilter, params.toArray());
      }
+          @Override
+     public List<DropDownDto> getEmpGradeCombo(CommonFilterDto commonFilterDto)
+     {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("GEN_TL_EMPGRADEMST");
+        comboFilter.setIdField("GRDM_KEYID");
+        comboFilter.setNameField("GRDM_NAME");
+        comboFilter.setCondSql(" AND GRDM_ACTIVE = 'Y' ");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+     }
 }

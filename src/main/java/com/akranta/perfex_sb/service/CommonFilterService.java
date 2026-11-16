@@ -211,6 +211,7 @@ public List<DropDownDto> getBdPhenomenaCombo(CommonFilterDto commonFilterDto);
 public List<DropDownDto> getFinalTradeCombo(CommonFilterDto commonFilterDto);
 public List<DropDownDto> getCauseCombo(CommonFilterDto commonFilterDto);
 public List<DropDownDto> getAlarmCombo(CommonFilterDto commonFilterDto);
+public List<DropDownDto> getEmpGradeCombo(CommonFilterDto commonFilterDto);
 
 
 

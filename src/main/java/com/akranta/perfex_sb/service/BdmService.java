@@ -57,8 +57,8 @@ int deleteOtherCostActual(String woid, String requestedby, String othercostmstid
     BAL_BdmTlDtl getBdmDetailByMasterKeyid(String bdmsKeyid) throws Exception;
 
     WomTlWomst getWorkOrder(String keyid) throws Exception;
-    ResponseEntity<WomTlCommunicationlog> saveCommTxt(
-            WomTlCommunicationlog log) throws Exception;
-            List<Map<String, Object>> getCommText(String bdId) throws Exception;
+    ResponseEntity<WomTlCommunicationlog> saveCommTxt(WomTlCommunicationlog log) throws Exception;
+    List<Map<String, Object>> getCommText(String bdId) throws Exception;
+    List<Map<String, Object>> getEmpCost(String empId) throws Exception;
 
 }

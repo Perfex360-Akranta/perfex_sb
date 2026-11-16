@@ -1080,6 +1080,14 @@ public ResponseEntity<List<DropDownDto>> getCostCentreCombo(@RequestBody(require
         return ResponseEntity.ok(service.getAlarmCombo(commonFilterDto));
 
     }
+        //Employee Grade combo
+    @PostMapping("/crt/combo_empgrade")
+    public ResponseEntity<List<DropDownDto>> getEmpGradeCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto) 
+    {
+
+        return ResponseEntity.ok(service.getEmpGradeCombo(commonFilterDto));
+
+    }
     //---------------------------------------------otg routing screen ------------------------------------
     @PostMapping("/otg/status")
     public List<Map<String, String>> otgstatus() {
