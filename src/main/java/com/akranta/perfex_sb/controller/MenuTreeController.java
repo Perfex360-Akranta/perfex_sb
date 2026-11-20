@@ -16,7 +16,7 @@ import com.akranta.perfex_sb.dto.MenuTreeRecordDto;
 import com.akranta.perfex_sb.service.MenuTreeService;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/menu")
 public class MenuTreeController {
 
     private static final Logger logger = LoggerFactory.getLogger(MenuTreeController.class);
