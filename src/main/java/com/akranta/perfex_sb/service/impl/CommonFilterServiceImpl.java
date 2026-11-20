@@ -400,6 +400,9 @@ public class CommonFilterServiceImpl implements CommonFilterService {
                     """);
             params.add(factoryId);
         }
+        // else {
+        // comboFilter.setCondSql(" AND SFTM_ACTIVE = 'Y' ");
+        // }
 
         comboFilter.setTableName("GEN_TL_SHIFTMST");
 
@@ -2780,15 +2783,98 @@ public class CommonFilterServiceImpl implements CommonFilterService {
         return repository.fillComboValues(comboFilter, params.toArray());
     }
 
-//**************************************************Gendral Maintenance */
-@Override
-public List<DropDownDto> getGmntShiftCombo(CommonFilterDto commonFilterDto)
-{
-    String atTime = ValidationUtil.isValidKeyId(commonFilterDto.getAtTime())
-            ? commonFilterDto.getAtTime()
-            : java.time.LocalTime.now().toString();
+    // **************************************************Gendral Maintenance */
+    @Override
+    public List<DropDownDto> getGmntShiftCombo(CommonFilterDto commonFilterDto) {
+        String atTime = ValidationUtil.isValidKeyId(commonFilterDto.getAtTime())
+                ? commonFilterDto.getAtTime()
+                : java.time.LocalTime.now().toString();
 
-    return repository.getGmntShiftCombo(atTime, commonFilterDto.getFlId());
-}
+        return repository.getGmntShiftCombo(atTime, commonFilterDto.getFlId());
+    }
+
+    // **********************************************PCS***********************************************
+    // */
+
+    @Override
+    public List<DropDownDto> getLossHourNo(CommonFilterDto commonFilterDto) {
+        if (commonFilterDto == null
+                || !ValidationUtil.isValidKeyId(commonFilterDto.getCellId())
+                || !ValidationUtil.isValidKeyId(commonFilterDto.getShiftId())
+                || !ValidationUtil.isValidKeyId(commonFilterDto.getEntryDate())) {
+            logger.info("getLossHourNo: missing cellId/shiftId/entryDate - returning empty list");
+            return new ArrayList<>();
+        }
+
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setIdField("PPRD_HOUR");
+        comboFilter.setCodeField("PPRD_HOUR");
+        comboFilter.setTableName("BAL_PCS_TL_PRODUCTIONDATA");
+        comboFilter.setCondSql("""
+                AND PPRD_CELLID = ?
+                AND PPRD_DATE::date = TO_DATE(?, 'DD-Mon-YYYY')
+                AND PPRD_SHIFTID = ?
+                """);
+        params.add(commonFilterDto.getCellId());
+        params.add(commonFilterDto.getEntryDate());
+        params.add(commonFilterDto.getShiftId());
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    // lossnamedropdown in pcs loss entry
+    @Override
+    public List<DropDownDto> getLossComboPCS(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setCodeField("PLCM_PARAMETERNAME");
+        comboFilter.setNameField("PLCM_LOSSNO");
+        comboFilter.setIdField("PLCM_KEYID");
+        comboFilter.setCondSql(" AND PLCM_ISPARENT = 'Y' AND PLCM_ISLOSS = 'M' ");
+        comboFilter.setTableName("PCS_TL_LOGCONFIGURATION");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    // sublossdropdownPCS
+    @Override
+    public List<DropDownDto> getSubLossComboPCS(CommonFilterDto commonFilterDto) {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setCodeField("PLCM_PARAMETERNAME");
+        comboFilter.setNameField("PLCM_LOSSNO");
+        comboFilter.setIdField("PLCM_KEYID");
+        comboFilter.setTableName("PCS_TL_LOGCONFIGURATION");
+
+        String mainLossId = commonFilterDto != null ? commonFilterDto.getMainLossId() : null;
+
+        StringBuilder condSql = new StringBuilder();
+
+        if (mainLossId != null && !mainLossId.trim().isEmpty()) {
+            condSql.append(" AND PLCM_PARENTID = ? ");
+            params.add(mainLossId);
+        }
+
+        condSql.append(" AND (PLCM_ISLOSS = 'S' OR PLCM_ISLOSS = 'M') ");
+        condSql.append(" AND POSITION('(+)' IN PLCM_PARAMETERNAME) = 0 ");
+        condSql.append(" AND PLCM_PARAMETERCODE NOT IN ('REWORKQTY', 'REJECTEDQTY') ");
+
+        comboFilter.setCondSql(condSql.toString());
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+    }
+
+    @Override
+    public int getShiftTotaltime(CommonFilterDto commonFilterDto) {
+        if (commonFilterDto == null || !ValidationUtil.isValidKeyId(commonFilterDto.getShiftId())) {
+            return 0;
+        }
+        Double minutes = repository.getShiftTotalMinutes(commonFilterDto.getShiftId());
+        return (minutes == null || minutes < 0) ? 0 : (int) Math.round(minutes);
+    }
 
 }

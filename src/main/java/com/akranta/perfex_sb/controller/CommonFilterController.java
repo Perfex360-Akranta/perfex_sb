@@ -1,5 +1,6 @@
 package com.akranta.perfex_sb.controller;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -803,17 +804,17 @@ public class CommonFilterController {
         return ResponseEntity.ok(java.util.Collections.singletonMap("shift", shift != null ? shift : ""));
     }
 
-    // breakdown 
+    // breakdown
 
     @PostMapping("/assembly")
-    public ResponseEntity<List<DropDownDto>> getAssembly(@RequestBody(required = false) CommonFilterDto commonFilterDto)
-    {
+    public ResponseEntity<List<DropDownDto>> getAssembly(
+            @RequestBody(required = false) CommonFilterDto commonFilterDto) {
         return ResponseEntity.ok(service.getAssembly(commonFilterDto));
     }
 
     @PostMapping("/subAssembly")
-    public ResponseEntity<List<DropDownDto>> getSubAssembly(@RequestBody(required = false) CommonFilterDto commonFilterDto)
-    {
+    public ResponseEntity<List<DropDownDto>> getSubAssembly(
+            @RequestBody(required = false) CommonFilterDto commonFilterDto) {
         return ResponseEntity.ok(service.getSubAssembly(commonFilterDto));
     }
 
@@ -827,23 +828,52 @@ public class CommonFilterController {
                 new DropDownDto("L", "LOW")));
     }
 
-    //************************************GendralMaintenance******************************** */
+    // ************************************GendralMaintenance********************************
+    // */
 
-    //General maintenance shift combo
+    // General maintenance shift combo
     @PostMapping("/gmntShiftCombo")
-    public ResponseEntity<List<DropDownDto>> getGmntShiftCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto)
-    {
+    public ResponseEntity<List<DropDownDto>> getGmntShiftCombo(
+            @RequestBody(required = false) CommonFilterDto commonFilterDto) {
         return ResponseEntity.ok(service.getGmntShiftCombo(commonFilterDto));
     }
 
     @PostMapping("/selectMachineCondition")
-public List<Map<String, String>> selectMachineCondition() {
+    public List<Map<String, String>> selectMachineCondition() {
 
-    return List.of(
-            Map.of("value", "B", "label", "BOTH"),
-            Map.of("value", "S", "label", "SHUTDOWN"),
-            Map.of("value", "R", "label", "RUNNING"));
-}
+        return List.of(
+                Map.of("value", "B", "label", "BOTH"),
+                Map.of("value", "S", "label", "SHUTDOWN"),
+                Map.of("value", "R", "label", "RUNNING"));
+    }
 
+    // Loss entry hour combo (PCS)
+    @PostMapping("/lossHourCombo")
+    public ResponseEntity<List<DropDownDto>> getLossHourNo(
+            @RequestBody(required = false) CommonFilterDto commonFilterDto) {
+        return ResponseEntity.ok(service.getLossHourNo(commonFilterDto));
+    }
+
+    // lossnamedropdown in pcs loss entry
+    @PostMapping("/pcs/lossname")
+    public ResponseEntity<List<DropDownDto>> getLossNameComboPCS(
+            @RequestBody(required = false) CommonFilterDto commonFilterDto) {
+        return ResponseEntity.ok(service.getLossComboPCS(commonFilterDto));
+    }
+
+    // sublossdropdownPCS
+    @PostMapping("/pcs/subloss")
+    public ResponseEntity<List<DropDownDto>> getSubLossComboPCS(
+            @RequestBody(required = false) CommonFilterDto commonFilterDto) {
+        return ResponseEntity.ok(service.getSubLossComboPCS(commonFilterDto));
+    }
+
+    @PostMapping("/shiftMinutes")
+    public ResponseEntity<Map<String, Object>> getShiftMinutes(
+            @RequestBody(required = false) CommonFilterDto commonFilterDto) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("totalShifttime", service.getShiftTotaltime(commonFilterDto));
+        return ResponseEntity.ok(result);
+    }
 
 }

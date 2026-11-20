@@ -196,9 +196,16 @@ public List<DropDownDto> getAssembly(CommonFilterDto commonFilterDto);
 public List<DropDownDto> getSubAssembly(CommonFilterDto commonFilterDto);
 //***********************************************GeneralMaintenance******************************** */
 public List<DropDownDto> getGmntShiftCombo(CommonFilterDto commonFilterDto);
+//**********************************************PCS***********************************************   */
+public List<DropDownDto> getLossHourNo(CommonFilterDto commonFilterDto);
 
+//lossnamedropdown in pcs loss entry
+public List<DropDownDto> getLossComboPCS(CommonFilterDto commonFilterDto);
 
+//sublossdropdown
+public List<DropDownDto> getSubLossComboPCS(CommonFilterDto commonFilterDto);
 
+public int getShiftTotaltime(CommonFilterDto commonFilterDto);
 
 
 

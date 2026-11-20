@@ -22,8 +22,7 @@ public class CommonFilterRepository {
 
     private static final Logger logger = LoggerFactory.getLogger(CommonFilterRepository.class);
 
-    public List<DropDownDto> fillComboValuesWithoutKey(ComboFilterDto comboFilter, Object[] params) 
-    {
+    public List<DropDownDto> fillComboValuesWithoutKey(ComboFilterDto comboFilter, Object[] params) {
 
         StringBuilder sql = new StringBuilder();
 
@@ -67,17 +66,13 @@ public class CommonFilterRepository {
             sql.append(" ORDER BY LABEL ");
         }
 
-        
-
-
         return executeComboQuery(
                 sql.toString(),
                 params,
                 comboFilter);
     }
 
-    public List<DropDownDto> fillComboValues(ComboFilterDto comboFilter, Object[] params) 
-    {
+    public List<DropDownDto> fillComboValues(ComboFilterDto comboFilter, Object[] params) {
 
         StringBuilder sql = new StringBuilder();
 
@@ -105,59 +100,54 @@ public class CommonFilterRepository {
         }
 
         StringBuilder fromSql = new StringBuilder();
-            fromSql.append(" FROM ")
-           .append(comboFilter.getTableName())
-           .append(" WHERE 1=1 ");
+        fromSql.append(" FROM ")
+                .append(comboFilter.getTableName())
+                .append(" WHERE 1=1 ");
 
         if (ValidationUtil.isValidKeyId(comboFilter.getCondSql())) {
 
             fromSql.append(comboFilter.getCondSql());
         }
 
-        
-
         boolean isCombo = false;
         String excludeSql = "";
 
-        if  (!"grid".equals(comboFilter.getMode())&& ValidationUtil.isValidKeyId(comboFilter.getId())&& !ValidationUtil.isValidKeyId(comboFilter.getName())) 
-        {
+        if (!"grid".equals(comboFilter.getMode()) && ValidationUtil.isValidKeyId(comboFilter.getId())
+                && !ValidationUtil.isValidKeyId(comboFilter.getName())) {
             isCombo = true;
 
             StringBuilder firstSelect = new StringBuilder(selectSql);
             firstSelect.append(", 1 AS R");
             firstSelect.append(fromSql);
 
-            if(comboFilter.getId().contains(","))
-            {
-                    firstSelect.append(" AND ")
-                       .append(comboFilter.getIdField())
-                       .append(" IN ('")
-                       .append(comboFilter.getId().replace(",", "','"))
-                       .append("')");
+            if (comboFilter.getId().contains(",")) {
+                firstSelect.append(" AND ")
+                        .append(comboFilter.getIdField())
+                        .append(" IN ('")
+                        .append(comboFilter.getId().replace(",", "','"))
+                        .append("')");
 
-            excludeSql = " AND " + comboFilter.getIdField()
-                    + " NOT IN ('"
-                    + comboFilter.getId().replace(",", "','")
-                    + "')";
+                excludeSql = " AND " + comboFilter.getIdField()
+                        + " NOT IN ('"
+                        + comboFilter.getId().replace(",", "','")
+                        + "')";
 
+            } else {
+
+                firstSelect.append(" AND ")
+                        .append(comboFilter.getIdField())
+                        .append("='")
+                        .append(comboFilter.getId())
+                        .append("'");
+
+                excludeSql = " AND "
+                        + comboFilter.getIdField()
+                        + "<>'"
+                        + comboFilter.getId()
+                        + "'";
             }
-            else 
-            {
 
-            firstSelect.append(" AND ")
-                       .append(comboFilter.getIdField())
-                       .append("='")
-                       .append(comboFilter.getId())
-                       .append("'");
-
-            excludeSql = " AND "
-                    + comboFilter.getIdField()
-                    + "<>'"
-                    + comboFilter.getId()
-                    + "'";
-            }
-            
-               sql.append(firstSelect).append(" UNION ");
+            sql.append(firstSelect).append(" UNION ");
 
         }
         sql.append(selectSql);
@@ -169,7 +159,7 @@ public class CommonFilterRepository {
         sql.append(fromSql);
 
         if (isCombo) {
-        sql.append(excludeSql);
+            sql.append(excludeSql);
         }
 
         sql.append(" ORDER BY ");
@@ -178,13 +168,13 @@ public class CommonFilterRepository {
             sql.append("R, ");
         }
 
-        if  (ValidationUtil.isValidKeyId(comboFilter.getOrderByField())) {
+        if (ValidationUtil.isValidKeyId(comboFilter.getOrderByField())) {
             sql.append(comboFilter.getOrderByField());
         } else {
             sql.append("LABEL");
         }
-        logger.info("SQl {}",sql.toString());
-    return executeComboQuery(sql.toString(),params,comboFilter);
+        logger.info("SQl {}", sql.toString());
+        return executeComboQuery(sql.toString(), params, comboFilter);
     }
 
     private List<DropDownDto> executeComboQuery(String sql, Object[] params, ComboFilterDto comboFilter) {
@@ -231,120 +221,119 @@ public class CommonFilterRepository {
         );
     }
 
-    public List<DropDownDto> fillComboValues1(ComboFilterDto comboFilter, Object[] params)
-{
-    StringBuilder sql = new StringBuilder();
+    public List<DropDownDto> fillComboValues1(ComboFilterDto comboFilter, Object[] params) {
+        StringBuilder sql = new StringBuilder();
 
-    StringBuilder selectSql = new StringBuilder("SELECT DISTINCT ");
+        StringBuilder selectSql = new StringBuilder("SELECT DISTINCT ");
 
-    selectSql.append(comboFilter.getIdField())
-            .append(" AS VALUE, ");
+        selectSql.append(comboFilter.getIdField())
+                .append(" AS VALUE, ");
 
-    if (ValidationUtil.isValidKeyId(comboFilter.getNameField())
-            && ValidationUtil.isValidKeyId(comboFilter.getCodeField())) {
+        if (ValidationUtil.isValidKeyId(comboFilter.getNameField())
+                && ValidationUtil.isValidKeyId(comboFilter.getCodeField())) {
 
-        selectSql.append(comboFilter.getNameField())
-                .append(" || '-' || ")
-                .append(comboFilter.getCodeField())
-                .append(" AS LABEL ");
+            selectSql.append(comboFilter.getNameField())
+                    .append(" || '-' || ")
+                    .append(comboFilter.getCodeField())
+                    .append(" AS LABEL ");
 
-    } else if (ValidationUtil.isValidKeyId(comboFilter.getNameField())) {
+        } else if (ValidationUtil.isValidKeyId(comboFilter.getNameField())) {
 
-        selectSql.append(comboFilter.getNameField()).append(" AS LABEL ");
-
-    } else {
-
-        selectSql.append(comboFilter.getCodeField())
-                .append(" AS LABEL ");
-    }
-
-    // base FROM+WHERE — NO condSql here. Used for the r=1 (id-match) branch,
-    // matching legacy DaoImpl behaviour where the id-match row bypassed
-    // the extra cell/trade condition.
-    StringBuilder baseFromSql = new StringBuilder();
-    baseFromSql.append(" FROM ")
-       .append(comboFilter.getTableName())
-       .append(" WHERE 1=1 ");
-
-    // this copy carries condSql — used ONLY for the r=2 (exclusion) branch
-    StringBuilder fromSql = new StringBuilder(baseFromSql);
-    if (ValidationUtil.isValidKeyId(comboFilter.getCondSql())) {
-        fromSql.append(comboFilter.getCondSql());
-    }
-
-    boolean isCombo = false;
-    String excludeSql = "";
-
-    if (!"grid".equals(comboFilter.getMode())
-            && ValidationUtil.isValidKeyId(comboFilter.getId())
-            && !ValidationUtil.isValidKeyId(comboFilter.getName())) {
-
-        isCombo = true;
-
-        StringBuilder firstSelect = new StringBuilder(selectSql);
-        firstSelect.append(", 1 AS R");
-        firstSelect.append(baseFromSql);   // <-- condSql NOT included
-
-        if (comboFilter.getId().contains(",")) {
-            firstSelect.append(" AND ")
-                       .append(comboFilter.getIdField())
-                       .append(" IN ('")
-                       .append(comboFilter.getId().replace(",", "','"))
-                       .append("')");
-
-            excludeSql = " AND " + comboFilter.getIdField()
-                    + " NOT IN ('"
-                    + comboFilter.getId().replace(",", "','")
-                    + "')";
+            selectSql.append(comboFilter.getNameField()).append(" AS LABEL ");
 
         } else {
 
-            firstSelect.append(" AND ")
-                       .append(comboFilter.getIdField())
-                       .append("='")
-                       .append(comboFilter.getId())
-                       .append("'");
-
-            excludeSql = " AND "
-                    + comboFilter.getIdField()
-                    + "<>'"
-                    + comboFilter.getId()
-                    + "'";
+            selectSql.append(comboFilter.getCodeField())
+                    .append(" AS LABEL ");
         }
 
-        sql.append(firstSelect).append(" UNION ");
+        // base FROM+WHERE — NO condSql here. Used for the r=1 (id-match) branch,
+        // matching legacy DaoImpl behaviour where the id-match row bypassed
+        // the extra cell/trade condition.
+        StringBuilder baseFromSql = new StringBuilder();
+        baseFromSql.append(" FROM ")
+                .append(comboFilter.getTableName())
+                .append(" WHERE 1=1 ");
+
+        // this copy carries condSql — used ONLY for the r=2 (exclusion) branch
+        StringBuilder fromSql = new StringBuilder(baseFromSql);
+        if (ValidationUtil.isValidKeyId(comboFilter.getCondSql())) {
+            fromSql.append(comboFilter.getCondSql());
+        }
+
+        boolean isCombo = false;
+        String excludeSql = "";
+
+        if (!"grid".equals(comboFilter.getMode())
+                && ValidationUtil.isValidKeyId(comboFilter.getId())
+                && !ValidationUtil.isValidKeyId(comboFilter.getName())) {
+
+            isCombo = true;
+
+            StringBuilder firstSelect = new StringBuilder(selectSql);
+            firstSelect.append(", 1 AS R");
+            firstSelect.append(baseFromSql); // <-- condSql NOT included
+
+            if (comboFilter.getId().contains(",")) {
+                firstSelect.append(" AND ")
+                        .append(comboFilter.getIdField())
+                        .append(" IN ('")
+                        .append(comboFilter.getId().replace(",", "','"))
+                        .append("')");
+
+                excludeSql = " AND " + comboFilter.getIdField()
+                        + " NOT IN ('"
+                        + comboFilter.getId().replace(",", "','")
+                        + "')";
+
+            } else {
+
+                firstSelect.append(" AND ")
+                        .append(comboFilter.getIdField())
+                        .append("='")
+                        .append(comboFilter.getId())
+                        .append("'");
+
+                excludeSql = " AND "
+                        + comboFilter.getIdField()
+                        + "<>'"
+                        + comboFilter.getId()
+                        + "'";
+            }
+
+            sql.append(firstSelect).append(" UNION ");
+        }
+
+        sql.append(selectSql);
+
+        if (isCombo) {
+            sql.append(", 2 AS R");
+        }
+
+        sql.append(fromSql); // condSql applies HERE only
+
+        if (isCombo) {
+            sql.append(excludeSql);
+        }
+
+        sql.append(" ORDER BY ");
+
+        if (isCombo) {
+            sql.append("R, ");
+        }
+
+        if (ValidationUtil.isValidKeyId(comboFilter.getOrderByField())) {
+            sql.append(comboFilter.getOrderByField());
+        } else {
+            sql.append("LABEL");
+        }
+
+        logger.info("SQl {}", sql.toString());
+        return executeComboQuery(sql.toString(), params, comboFilter);
     }
+    // ----------------------------HARI-------------------------------
 
-    sql.append(selectSql);
-
-    if (isCombo) {
-        sql.append(", 2 AS R");
-    }
-
-    sql.append(fromSql);          // condSql applies HERE only
-
-    if (isCombo) {
-        sql.append(excludeSql);
-    }
-
-    sql.append(" ORDER BY ");
-
-    if (isCombo) {
-        sql.append("R, ");
-    }
-
-    if (ValidationUtil.isValidKeyId(comboFilter.getOrderByField())) {
-        sql.append(comboFilter.getOrderByField());
-    } else {
-        sql.append("LABEL");
-    }
-
-    logger.info("SQl {}", sql.toString());
-    return executeComboQuery(sql.toString(), params, comboFilter);
-}
-//----------------------------HARI-------------------------------
-
-///newTrainingCalendar/Combo_Faculty
+    /// newTrainingCalendar/Combo_Faculty
     public String resolveSectId(String fnlnKeyid) {
 
         String sql = """
@@ -371,8 +360,8 @@ public class CommonFilterRepository {
 
         return result.isEmpty() ? null : result.get(0);
     }
-    public List<DropDownDto> fillComboValuesRole(ComboFilterDto comboFilter, Object[] params)
-    {
+
+    public List<DropDownDto> fillComboValuesRole(ComboFilterDto comboFilter, Object[] params) {
         StringBuilder sql = new StringBuilder();
         StringBuilder tbl = new StringBuilder(" , ROLE_LEVEL FROM ")
                 .append(comboFilter.getTableName())
@@ -386,12 +375,18 @@ public class CommonFilterRepository {
             selectSql.append(comboFilter.getIdField()).append(" AS VALUE ");
         }
 
-        if (ValidationUtil.isValidKeyId(comboFilter.getNameField()) && ValidationUtil.isValidKeyId(comboFilter.getCodeField())) {
-            selectSql.append(", ").append(comboFilter.getNameField()).append(" || '-' || ").append(comboFilter.getCodeField()).append(" AS LABEL ");
-            if (ValidationUtil.isValidKeyId(comboFilter.getCode()) || ValidationUtil.isValidKeyId(comboFilter.getName())) {
-                likeSql = " (UPPER(" + comboFilter.getCodeField() + ") LIKE UPPER(?) OR UPPER(" + comboFilter.getNameField() + ") LIKE UPPER(?)) ";
-                likeParams.add("%" + (ValidationUtil.isValidKeyId(comboFilter.getCode()) ? comboFilter.getCode() : "") + "%");
-                likeParams.add("%" + (ValidationUtil.isValidKeyId(comboFilter.getName()) ? comboFilter.getName() : "") + "%");
+        if (ValidationUtil.isValidKeyId(comboFilter.getNameField())
+                && ValidationUtil.isValidKeyId(comboFilter.getCodeField())) {
+            selectSql.append(", ").append(comboFilter.getNameField()).append(" || '-' || ")
+                    .append(comboFilter.getCodeField()).append(" AS LABEL ");
+            if (ValidationUtil.isValidKeyId(comboFilter.getCode())
+                    || ValidationUtil.isValidKeyId(comboFilter.getName())) {
+                likeSql = " (UPPER(" + comboFilter.getCodeField() + ") LIKE UPPER(?) OR UPPER("
+                        + comboFilter.getNameField() + ") LIKE UPPER(?)) ";
+                likeParams.add(
+                        "%" + (ValidationUtil.isValidKeyId(comboFilter.getCode()) ? comboFilter.getCode() : "") + "%");
+                likeParams.add(
+                        "%" + (ValidationUtil.isValidKeyId(comboFilter.getName()) ? comboFilter.getName() : "") + "%");
             }
         } else if (ValidationUtil.isValidKeyId(comboFilter.getNameField())) {
             selectSql.append(", ").append(comboFilter.getNameField()).append(" AS LABEL ");
@@ -415,7 +410,8 @@ public class CommonFilterRepository {
         String excludeSql = "";
         List<Object> allParams = new ArrayList<>();
 
-        if (!"grid".equals(comboFilter.getMode()) && ValidationUtil.isValidKeyId(comboFilter.getId()) && !ValidationUtil.isValidKeyId(comboFilter.getName())) {
+        if (!"grid".equals(comboFilter.getMode()) && ValidationUtil.isValidKeyId(comboFilter.getId())
+                && !ValidationUtil.isValidKeyId(comboFilter.getName())) {
 
             isCombo = true;
 
@@ -426,9 +422,11 @@ public class CommonFilterRepository {
             if (comboFilter.getId().indexOf(",") > 0) {
                 firstSelect.append(" AND ").append(comboFilter.getIdField()).append(" IN ('")
                         .append(comboFilter.getId().replace(",", "','")).append("')");
-                excludeSql = " AND " + comboFilter.getIdField() + " NOT IN ('" + comboFilter.getId().replace(",", "','") + "')";
+                excludeSql = " AND " + comboFilter.getIdField() + " NOT IN ('" + comboFilter.getId().replace(",", "','")
+                        + "')";
             } else {
-                firstSelect.append(" AND ").append(comboFilter.getIdField()).append(" = '").append(comboFilter.getId()).append("'");
+                firstSelect.append(" AND ").append(comboFilter.getIdField()).append(" = '").append(comboFilter.getId())
+                        .append("'");
                 excludeSql = " AND " + comboFilter.getIdField() + " <> '" + comboFilter.getId() + "'";
             }
 
@@ -479,7 +477,6 @@ public class CommonFilterRepository {
         return executeComboQuery(sql.toString(), allParams.toArray(), comboFilter);
     }
 
-
     public String getCurrentShiftPrimary() {
         try {
             return jdbcTemplate.queryForObject(
@@ -505,43 +502,61 @@ public class CommonFilterRepository {
         }
     }
 
-
-
     public List<DropDownDto> getGmntShiftCombo(String atTime, String flId) {
 
-    StringBuilder sql = new StringBuilder();
-    sql.append(" SELECT DISTINCT ");
-    sql.append("   SFTM_KEYID AS VALUE, ");
-    sql.append("   SFTM_CODE AS LABEL ");
-    sql.append(" FROM GEN_TL_SHIFTMST ");
-    sql.append(" WHERE 1=1 ");
-    sql.append("   AND SFTM_ACTIVE = 'Y' ");
-    sql.append("   AND ( ");
-    sql.append("     (SFTM_STARTTIME <= SFTM_ENDTIME AND CAST(? AS TIME) BETWEEN SFTM_STARTTIME AND SFTM_ENDTIME) ");
-    sql.append("     OR ");
-    sql.append("     (SFTM_STARTTIME > SFTM_ENDTIME AND (CAST(? AS TIME) >= SFTM_STARTTIME OR CAST(? AS TIME) <= SFTM_ENDTIME)) ");
-    sql.append("   ) ");
+        StringBuilder sql = new StringBuilder();
+        sql.append(" SELECT DISTINCT ");
+        sql.append("   SFTM_KEYID AS VALUE, ");
+        sql.append("   SFTM_CODE AS LABEL ");
+        sql.append(" FROM GEN_TL_SHIFTMST ");
+        sql.append(" WHERE 1=1 ");
+        sql.append("   AND SFTM_ACTIVE = 'Y' ");
+        sql.append("   AND ( ");
+        sql.append(
+                "     (SFTM_STARTTIME <= SFTM_ENDTIME AND CAST(? AS TIME) BETWEEN SFTM_STARTTIME AND SFTM_ENDTIME) ");
+        sql.append("     OR ");
+        sql.append(
+                "     (SFTM_STARTTIME > SFTM_ENDTIME AND (CAST(? AS TIME) >= SFTM_STARTTIME OR CAST(? AS TIME) <= SFTM_ENDTIME)) ");
+        sql.append("   ) ");
 
-    List<Object> params = new ArrayList<>();
-    params.add(atTime);
-    params.add(atTime);
-    params.add(atTime);
+        List<Object> params = new ArrayList<>();
+        params.add(atTime);
+        params.add(atTime);
+        params.add(atTime);
 
-    if (ValidationUtil.isValidKeyId(flId)) {
-        sql.append(" AND SFTM_FLID = ? ");
-        params.add(flId);
+        if (ValidationUtil.isValidKeyId(flId)) {
+            sql.append(" AND SFTM_FLID = ? ");
+            params.add(flId);
+        }
+
+        sql.append(" ORDER BY LABEL ");
+
+        logger.info("Shift combo SQL {}", sql.toString());
+
+        return jdbcTemplate.query(
+                sql.toString(),
+                (rs, rowNum) -> new DropDownDto(
+                        rs.getString("VALUE"),
+                        rs.getString("LABEL")),
+                params.toArray());
     }
 
-    sql.append(" ORDER BY LABEL ");
+    public Double getShiftTotalMinutes(String shiftId) {  
+        String sql = """
+                SELECT ((EXTRACT(EPOCH FROM SFTM_ENDTIME::time)
+                       - EXTRACT(EPOCH FROM SFTM_STARTTIME::time)
+                       + CASE WHEN SFTM_ENDTIME::time < SFTM_STARTTIME::time THEN 86400 ELSE 0 END) / 60.0)
+                       - COALESCE(SFTM_BREAKTIME::numeric, 0)
+                FROM GEN_TL_SHIFTMST
+                WHERE SFTM_KEYID = ?
+                """;
 
-    logger.info("Shift combo SQL {}", sql.toString());
+        List<Double> result = jdbcTemplate.query(
+                sql,
+                (rs, rowNum) -> rs.getDouble(1),
+                shiftId);
 
-    return jdbcTemplate.query(
-            sql.toString(),
-            (rs, rowNum) -> new DropDownDto(
-                    rs.getString("VALUE"),
-                    rs.getString("LABEL")),
-            params.toArray()
-    );
-}
+        return result.isEmpty() ? null : result.get(0);
+    }
+
 }
