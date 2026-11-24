@@ -7,12 +7,20 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.time.Duration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +29,7 @@ import com.akranta.perfex_sb.model.*;
 import com.akranta.perfex_sb.repository.*;
 import com.akranta.perfex_sb.service.BAL_PcsLossService;
 import com.akranta.perfex_sb.service.DbActionTemplate;
+import com.akranta.perfex_sb.util.ValidationUtil;
 
 
 @Service
@@ -41,12 +50,19 @@ public class Bal_PcsLossSaveServiceImpl implements BAL_PcsLossService {
     private final BAL_PcsLossReasonLinkRepository linkRepository;
     private final DbActionTemplate dbActionTemplate;
     private final DbFunctionTempleteRepository fnRepository;
+    private final BAL_PcsTlLosscausemstRepository pcsTlLosscausemstRepository;
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
+    @Autowired
+    private DynamicPcsDtlRepository dynamicPcsDtlRepository;
     
 
     public Bal_PcsLossSaveServiceImpl(BAL_PcsEntryMstRepository masterRepository,
                                      BAL_PcsEntryDtlRepository detailRepository,
                                      BAL_PcsLossCaptureRepository lossCaptureRepository,
                                      BAL_PcsLossReasonLinkRepository linkRepository,
+                                     BAL_PcsTlLosscausemstRepository pcsTlLosscausemstRepository,
                                      DbActionTemplate dbActionTemplate,
                                     DbFunctionTempleteRepository fnRepository) {
         this.masterRepository = masterRepository;
@@ -55,13 +71,13 @@ public class Bal_PcsLossSaveServiceImpl implements BAL_PcsLossService {
         this.linkRepository = linkRepository;
         this.dbActionTemplate = dbActionTemplate;
         this.fnRepository = fnRepository;
-       
+        this.pcsTlLosscausemstRepository = pcsTlLosscausemstRepository;
         
     }
 
     @Override
     @Transactional
-    public BAL_PcsLossCapture saveLoss(BalPcsLossSaveDto request) {
+    public BAL_PcsLossCapture saveLoss(BalPcsLossSaveDto request) throws Exception {
         if (request == null)
             throw new IllegalArgumentException("Request is null");
         if (request.getMaster() == null)
@@ -97,142 +113,285 @@ public class Bal_PcsLossSaveServiceImpl implements BAL_PcsLossService {
         List<String[]> detailsForRecalc = new ArrayList<>(); // {detailId, calendartime}
         String lastDetailId = null;
 
-        // --- 3. One master / detail set per shift ---
-        for (String[] shiftRow : shifts) {
-            String shiftId = shiftRow[0];
-            LocalDateTime prodDate = productionDate(cap.getFromtime(), shiftId);
-
-            // BAL_PcsEntryMst shiftMaster = new BAL_PcsEntryMst();
-            // org.springframework.beans.BeanUtils.copyProperties(master, shiftMaster);
-            // shiftMaster.setShiftid(shiftId);
-            // shiftMaster.setDate(prodDate);
-            // shiftMaster.setEntrydate(prodDate);
-            BAL_PcsEntryMst shiftMaster = new BAL_PcsEntryMst();
-org.springframework.beans.BeanUtils.copyProperties(master, shiftMaster);
-if (!isValidKey(master.getKeyid()))
-    throw new IllegalStateException("No production entry for this shift. Save production first, then the loss.");
-String masterId = master.getKeyid();
-
-            // String masterId = findOrCreateMaster(shiftMaster, now);
-           // String masterId = findOrCreateMaster(shiftMaster, now);
-
-            // --- 4. Hour buckets of this shift ---
-            // one detail/link row per shift, using the hour the user selected
-            String hourNo = (isBlank(cap.getLosshrno()) || "0".equals(cap.getLosshrno()))
-                    ? "1"
-                    : cap.getLosshrno();
-            int hourAvail = availHourly.intValue();
-
-            // minutes for this shift: DB function row [2] if present, else the entered loss
-            // time
-            int lossMinutes = Integer.parseInt(cap.getLosstime().trim());
-
-            String machineId = "S".equals(String.valueOf(master.getLogtype())) ? "0" : hourNo;
-
-            // resolve the detail row of the selected hour (don't trust the servlet's MIN(PLDETAILSID))
-String dtlId = detailRepository.findDetailIdByHour(
-        master.getCellid(), cap.getShiftid(), cap.getDate().toLocalDate(),
-        Integer.parseInt(hourNo));
-if (!isValidKey(dtlId))
-    throw new IllegalStateException(
-            "No production entry for hour " + hourNo + ". Save production first, then the loss.");
-if (!dtlId.equals(detail.getPldetailsid()))
-    logger.warn("Servlet sent detail={} but hour {} resolves to {}; using {}",
-            detail.getPldetailsid(), hourNo, dtlId, dtlId);
-
-            // String dtlId = detail.getPldetailsid(); // 472, resolved by the servlet
-            // if (!isValidKey(dtlId))
-            //     throw new IllegalStateException(
-            //             "No production entry for this hour. Save production first, then the loss.");
-
-            String detailTable = detailRepository.findDetailTable(master.getCellid());
+         String detailTable = detailRepository.findDetailTable(master.getCellid());
             if (detailTable == null)
                 throw new IllegalStateException("No detail table for cell " + master.getCellid());
 
-            lastDetailId = dtlId;
-            saveLossLink(link, cap, shiftMaster, dtlId, hourNo, lossMinutes, now);
-            detailsForRecalc.add(new String[] { dtlId, availHourly.toPlainString(), detailTable });
+        // --- 3. One master / detail set per shift ---
+        for (String[] shiftRow : shifts) {
+            System.out.println("Shift row: " + Arrays.toString(shiftRow));
+            String shiftId = shiftRow[0];
+            BigDecimal shiftAvailableTime =new BigDecimal(String.valueOf(shiftRow[2]));//new BigDecimal(shiftRow[2]);
+            LocalDateTime prodDate = productionDate(cap.getFromtime(), shiftId);
+System.out.println("shiftAvailableTime: " + shiftAvailableTime);
+            master.setShiftid(shiftId);
+            master.setDate(prodDate);
+            master.setEntrydate(prodDate);
+            
+            detail.setCalendartime(shiftAvailableTime);
 
-            // BAL_PcsEntryDtl dtl = detailRepository
-            //         .findFirstByMachineidAndPlmasteridOrderByPldetailsidAsc(machineId, masterId)
-            //         .orElse(null);
+            String entryDate = master.getEntrydate().format(DateTimeFormatter.ofPattern("dd-MMM-yyyy HH:mm", Locale.ENGLISH)).toUpperCase(Locale.ENGLISH);
 
-            // if (dtl == null) {
-            //     BigDecimal unaccounted = BigDecimal.valueOf(hourAvail - lossMinutes);
-            //     dtl = new BAL_PcsEntryDtl();
-            //     org.springframework.beans.BeanUtils.copyProperties(detail, dtl);
-            //     dtl.setPldetailsid(generate(DETAIL_SEQ, 15, "PDE", "YY", "Y"));
-            //     dtl.setPlmasterid(masterId);
-            //     dtl.setMachineid(machineId);
-            //     dtl.setUnaccountedtime(unaccounted);
-            //     dtl.setProductionavltime(unaccounted);
-            //     dtl.setMchavailabletime(unaccounted);
-            //     dtl.setCalendartime(availHourly);
-            //     dtl.setCreatedon(now);
-            //     dtl.setModifiedon(now);
-            // } else {
-            //     dtl.setCalendartime(availHourly);
-            //     dtl.setModifiedon(now);
-            // }
-            // detailRepository.save(dtl);
-            // lastDetailId = dtl.getPldetailsid();
+    Integer checkcount = masterRepository.checkExistingMaster(
+            entryDate,
+            master.getShiftid(),
+            master.getSectionid(),
+            master.getCellid()
+    );
 
-            // saveLossLink(link, cap, shiftMaster, dtl.getPldetailsid(), hourNo, lossMinutes, now);
-            // detailsForRecalc.add(new String[] { dtl.getPldetailsid(), availHourly.toPlainString() });
+    if (checkcount != null && checkcount > 0) {
 
-            // List<String[]> hours = getLossHourNo(shiftId, fromTime, toTime);
-            // int total = hours.size();
+        String existingId = masterRepository.findExistingMasterId(
+                entryDate,
+                master.getShiftid(),
+                master.getSectionid(),
+                master.getCellid()
+        );
 
-            // for (int j = 0; j < total; j++) {
-            // String hourNo = hours.get(j)[3];
-            // String hourStart = hours.get(j)[1];
-            // String hourEnd = hours.get(j)[2];
-            // int hourAvail = Integer.parseInt(hours.get(j)[4]);
+        master.setKeyid(existingId);
+        master.setModifiedon(now);
 
-            // int lossMinutes = lossReasonMinutes(j, total, hourStart, hourEnd, fromTime,
-            // toTime);
+        masterRepository.save(master);
 
-            // String machineId = "S".equals(String.valueOf(master.getLogtype())) ? "0" :
-            // hourNo;
+        List<String[]> noOfHours = getLossHourNo(shiftId, fromTime, toTime);
 
-            // // --- detail: update only calendartime if it exists, else insert ---
-            // BAL_PcsEntryDtl dtl = detailRepository
-            // .findFirstByMachineidAndPlmasteridOrderByPldetailsidAsc(machineId, masterId)
-            // .orElse(null);
+int totalNoOfLossHours = noOfHours.size();
 
-            // if (dtl == null) {
-            // BigDecimal unaccounted = BigDecimal.valueOf(hourAvail - lossMinutes);
-            // dtl = new BAL_PcsEntryDtl();
-            // org.springframework.beans.BeanUtils.copyProperties(detail, dtl);
-            // dtl.setPldetailsid(generate(DETAIL_SEQ, 15, "PDE", "YY", "Y"));
-            // dtl.setPlmasterid(masterId);
-            // dtl.setMachineid(machineId);
-            // dtl.setUnaccountedtime(unaccounted);
-            // dtl.setProductionavltime(unaccounted);
-            // dtl.setMchavailabletime(unaccounted);
-            // dtl.setCalendartime(availHourly);
-            // dtl.setCreatedon(now);
-            // dtl.setModifiedon(now);
-            // detailRepository.save(dtl);
-            // } else {
-            // // do NOT overwrite production quantities entered on the Production tab
-            // dtl.setCalendartime(availHourly);
-            // dtl.setModifiedon(now);
-            // detailRepository.save(dtl);
-            // }
-            // lastDetailId = dtl.getPldetailsid();
+for (int j = 0; j < totalNoOfLossHours; j++) {
 
-            // // --- loss reason link: update if exists, else insert ---
-            // saveLossLink(link, cap, shiftMaster, dtl.getPldetailsid(), hourNo,
-            // lossMinutes, now);
+    String hourNo = noOfHours.get(j)[3];
+    String hourAvailTime = noOfHours.get(j)[4];
+    BigDecimal productionAvailTime = detail.getProductionavltime();
 
-            // detailsForRecalc.add(new String[] { dtl.getPldetailsid(),
-            // availHourly.toPlainString() });
+if (productionAvailTime != null
+        && productionAvailTime.compareTo(BigDecimal.valueOf(60)) > 0) {
 
-        }
+    hourAvailTime = productionAvailTime.stripTrailingZeros().toPlainString();
+
+} else {
+    hourAvailTime = noOfHours.get(j)[4];
+}
+    String hourStartTime = noOfHours.get(j)[1];
+    String hourEndTime = noOfHours.get(j)[2];
+System.out.println("noOfHours: " + Arrays.toString(noOfHours.get(j)));
+   int lossReasonMinutes = lossReasonMinutes(
+            j,
+            totalNoOfLossHours,
+            hourStartTime,
+            hourEndTime,
+            fromTime,
+            toTime
+    );
+
+     BigDecimal plrkMinutes =  cap.getLosstime() != null
+        ? new BigDecimal(cap.getLosstime())
+        : BigDecimal.ZERO;
+
+    detail.setPlmasterid(master.getKeyid());
+
+    // Machine ID condition
+    boolean isShiftLog = "S".equals(master.getLogtype());
+
+    if (isShiftLog) {
+        hourNo = "0";
+        detail.setMachineid("0");
+    } else {
+        detail.setMachineid(hourNo);
+    }
+
+    // Find existing detail ID
+    String dtlId = findMaxDetailId(detailTable,hourNo,detail.getPlmasterid());
+
+    detail.setCalendartime(availHourly);
+
+    int unaccountedTime =
+            Integer.parseInt(hourAvailTime) - lossReasonMinutes;
+
+    if (!ValidationUtil.isValidKeyId(dtlId)) {
+
+        // New detail record
+        detail.setUnaccountedtime(BigDecimal.valueOf(unaccountedTime));
+
+        detail.setMchavailabletime(BigDecimal.valueOf(unaccountedTime));
+
+        String newDetailId = generate(
+                "PCS_TL_DTL",
+                15,
+                "PDE",
+                "YY",
+                "Y"
+        );
+
+        detail.setPldetailsid(newDetailId);
+        dtlId = newDetailId;
+
+        // Insert detail into the dynamic detail table
+        dynamicPcsDtlRepository.insert(
+                detailTable,
+                detail
+        );
+
+    } else {
+
+        // Existing detail record
+        detail.setPldetailsid(dtlId);
+
+        // Update detail in the dynamic detail table
+        dynamicPcsDtlRepository.update(
+                detailTable,
+                detail
+        );
+    }
+
+     // Set detail ID on loss capture
+    cap.setPldetailsid(dtlId);
+
+    detail.setPldetailsid(dtlId);
+
+    // Set loss-reason-link fields
+    link.setMinutes(plrkMinutes);
+    link.setCellid(master.getCellid());
+    link.setPldetailid(dtlId);
+    link.setDate(master.getDate());
+    link.setShiftid(master.getShiftid());
+
+    detail.setCalendartime(availHourly);
+
+    
+    if (checkcount > 0) {
+
+        
+        createLossReasonLink(link,dtlId,link.getLossid(),link.getMinutes() );
+        detailsForRecalc.add(new String[] { dtlId, availHourly.toPlainString(), detailTable });
+
+    } else {
+
+        
+        updateLossReasonLink(link, dtlId,link.getLossid(),link.getMinutes() );
+        detailsForRecalc.add(new String[] { dtlId, availHourly.toPlainString(), detailTable });
+    }
+}
+
+    }else{
+         master.setKeyid(generate(MASTER_SEQ, 15, "PRL", "YY", "Y"));
+         master.setCreatedon(now);
+         master.setModifiedon(now);
+
+         masterRepository.save(master);
+
+          List<String[]> noOfHours = getLossHourNo(shiftId, fromTime, toTime);
+
+int totalNoOfLossHours = noOfHours.size();
+
+for (int j = 0; j < totalNoOfLossHours; j++) {
+
+    String hourNo = noOfHours.get(j)[3];
+    String hourAvailTime = noOfHours.get(j)[4];
+
+    String hourStartTime = noOfHours.get(j)[1];
+    String hourEndTime = noOfHours.get(j)[2];
+
+   int lossReasonMinutes = lossReasonMinutes(
+            j,
+            totalNoOfLossHours,
+            hourStartTime,
+            hourEndTime,
+            fromTime,
+            toTime
+    );
+
+     BigDecimal plrkMinutes =  cap.getLosstime() != null
+        ? new BigDecimal(cap.getLosstime())
+        : BigDecimal.ZERO;
+
+    detail.setPlmasterid(master.getKeyid());
+
+    // Find existing detail ID
+    String dtlId = findMaxDetailId(detailTable,hourNo,detail.getPlmasterid());
+    // Machine ID condition
+    boolean isShiftLog = "Y".equals(master.getLogtype());
+
+    if (isShiftLog) {
+        hourNo = "0";
+        detail.setMachineid("0");
+    } else {
+        detail.setMachineid(hourNo);
+    }
+
+    
+
+    detail.setCalendartime(availHourly);
+
+    int unaccountedTime =
+            Integer.parseInt(hourAvailTime) - lossReasonMinutes;
+
+    if (!ValidationUtil.isValidKeyId(dtlId)) {
+
+        // New detail record
+        detail.setUnaccountedtime(BigDecimal.valueOf(unaccountedTime));
+        detail.setProductionavltime(BigDecimal.valueOf(unaccountedTime));
+     
+        detail.setMchavailabletime(BigDecimal.valueOf(unaccountedTime));
+
+        String newDetailId = generate("PCS_TL_DTL",15,"PDE","YY","Y");
+
+        detail.setPldetailsid(newDetailId);
+        dtlId = newDetailId;
+
+        // Insert detail into the dynamic detail table
+        dynamicPcsDtlRepository.insert(
+                detailTable,
+                detail
+        );
+
+    } 
+    
+    // else {
+
+    //     // Existing detail record
+    //     detail.setPldetailsid(dtlId);
+
+    //     // Update detail in the dynamic detail table
+    //     dynamicPcsDtlRepository.update(
+    //             detailTable,
+    //             detail
+    //     );
+    // }
+
+     // Set detail ID on loss capture
+    cap.setPldetailsid(dtlId);
+
+    detail.setPldetailsid(dtlId);
+
+    // Set loss-reason-link fields
+    link.setMinutes(plrkMinutes);
+    link.setCellid(master.getCellid());
+    link.setPldetailid(dtlId);
+    link.setDate(master.getDate());
+    link.setShiftid(master.getShiftid());
+
+    detail.setCalendartime(availHourly);
+
+    
+    if (!ValidationUtil.isValidKeyId(master.getKeyid())) {
+
+        
+        createLossReasonLink(link,dtlId,link.getLossid(),link.getMinutes() );
+        detailsForRecalc.add(new String[] { dtlId, availHourly.toPlainString(), detailTable });
+
+    } else {
+
+        
+        updateLossReasonLink(link, dtlId,link.getLossid(),link.getMinutes() );
+        detailsForRecalc.add(new String[] { dtlId, availHourly.toPlainString(), detailTable });
+    }
+}
+    }
+}
+
 
         // --- 5. Loss capture header ---
-        cap.setPldetailsid(isValidKey(lastDetailId) ? lastDetailId : "-");
+        cap.setPldetailsid(isValidKey(cap.getPldetailsid()) ? cap.getPldetailsid() : "-");
         if (!isValidKey(cap.getKeyid())) {
             cap.setKeyid(generate(LOSSCAP_SEQ, 15, "PLOS", "YYMM", "Y"));
             cap.setCreatedon(now);
@@ -250,8 +409,10 @@ if (!dtlId.equals(detail.getPldetailsid()))
         //     recalculate(d[0], new BigDecimal(d[1]), cap.getFlid());
         // }
         for (String[] d : detailsForRecalc) {
-    recalculate(d[2], d[0], new BigDecimal(d[1]), cap.getFlid());
-}
+            System.out.println("detailsForRecalc: " + Arrays.toString(d));
+            System.out.println("cap.getFlid(): " +cap.getFlid());
+            recalculate(d[2], d[0], new BigDecimal(d[1]), cap.getFlid());
+        }
 
         logger.info("BAL PCS loss save: capture={} shifts={} detailRows={}",
                 cap.getKeyid(), shifts.size(), detailsForRecalc.size());
@@ -324,7 +485,16 @@ if (!dtlId.equals(detail.getPldetailsid()))
 
     /** SFT001 / SFT008 belong to the previous production day (legacy rule). */
  private LocalDateTime productionDate(LocalDateTime calendar, String shiftId) {
-    return calendar.toLocalDate().atStartOfDay();   // TODO apply previous-day rule only after confirming it
+    // return calendar.toLocalDate().atStartOfDay();   // TODO apply previous-day rule only after confirming it
+    LocalDate productionDate = calendar.toLocalDate();
+
+    if ("SFT001".equals(shiftId)
+            || "SFT008".equals(shiftId)) {
+
+        productionDate = productionDate.minusDays(1);
+    }
+
+    return productionDate.atStartOfDay();
 }
     // =====================================================================
     // TODO: port these from the legacy code
@@ -369,10 +539,148 @@ if (!dtlId.equals(detail.getPldetailsid()))
     //     throw new UnsupportedOperationException("Port legacy getLossHourNo");
     // }
 
-    /** TODO port legacy lossReasonMinutes(j, total, hourStart, hourEnd, from, to). */
-    private int lossReasonMinutes(int j, int total, String hourStart, String hourEnd, String from, String to) {
-        throw new UnsupportedOperationException("Port legacy lossReasonMinutes");
+    public List<String[]> getLossHourNo(
+        String shiftId,
+        String dfromtime,
+        String dtoTime) {
+
+    try {
+        // Get shift start time
+        String shiftStart = lossCaptureRepository.findShiftStartTime(shiftId);
+
+        if (shiftStart == null || shiftStart.isBlank()) {
+            return Collections.emptyList();
+        }
+
+        // Convert HH:mm to HHmm, as in the legacy code
+        String fromTime = dfromtime.replace(":", "");
+        String toTime = dtoTime.replace(":", "");
+
+        // Get hourly slots from repository
+        List<Object[]> hourRows = lossCaptureRepository.findLossHours(
+                shiftId,
+                shiftStart,
+                fromTime,
+                toTime
+        );
+
+        if (hourRows == null || hourRows.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Convert List<Object[]> to legacy List<String[]>
+        List<String[]> noOfHours = new ArrayList<>();
+
+        for (Object[] row : hourRows) {
+
+            String[] hour = new String[5];
+
+            for (int i = 0; i < row.length; i++) {
+                hour[i] = row[i] != null
+                        ? row[i].toString()
+                        : null;
+            }
+
+            noOfHours.add(hour);
+        }
+
+        return noOfHours;
+
+    } catch (Exception e) {
+        logger.error("Exception in getLossHourNo(): {}", e.getMessage(), e);
+        throw new RuntimeException("Unable to get loss hour details", e);
     }
+}
+
+    /** TODO port legacy lossReasonMinutes(j, total, hourStart, hourEnd, from, to). */
+    // private int lossReasonMinutes(int j, int total, String hourStart, String hourEnd, String from, String to) {
+       
+    // }
+
+//     private int lossReasonMinutes(
+//         LocalDateTime hourStart,
+//         LocalDateTime hourEnd,
+//         LocalDateTime lossStart,
+//         LocalDateTime lossEnd) {
+
+//     LocalDateTime actualStart =
+//             hourStart.isAfter(lossStart) ? hourStart : lossStart;
+
+//     LocalDateTime actualEnd =
+//             hourEnd.isBefore(lossEnd) ? hourEnd : lossEnd;
+
+//     if (!actualEnd.isAfter(actualStart)) {
+//         return 0;
+//     }
+
+//     return (int) Duration.between(actualStart, actualEnd).toMinutes();
+// }
+
+private int lossReasonMinutes(int j,int totalNoOfLossHours,String hourStartTime,String hourEndTime,String dfromtime, String dtoTime) {
+
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+
+    LocalTime lossFrom = LocalTime.parse(dfromtime, formatter);
+    LocalTime lossTo = LocalTime.parse(dtoTime, formatter);
+
+    LocalTime hourStart = LocalTime.parse(
+            hourStartTime, formatter);
+
+    LocalTime hourEnd = LocalTime.parse(
+            hourEndTime, formatter);
+
+    int minutes;
+
+    if (j == 0) {
+
+        if (totalNoOfLossHours != 1) {
+            minutes = (int) Duration.between(lossFrom, hourEnd).toMinutes();
+        } else {
+            minutes = (int) Duration.between(lossFrom, lossTo).toMinutes();
+        }
+
+    } else if (j == totalNoOfLossHours - 1) {
+
+        minutes = (int) Duration.between(hourStart, lossTo).toMinutes();
+
+    } else {
+
+        minutes = (int) Duration.between(hourStart, hourEnd).toMinutes();
+    }
+
+    if (minutes < 0) {
+        minutes += 1440;
+    }
+
+    return minutes;
+}
+
+
+public String findMaxDetailId(
+        String detailTableName,
+        String machineId,
+        String masterId) {
+
+    // Validate the dynamic table identifier before using it in SQL.
+    if (detailTableName == null ||
+            !detailTableName.matches("[a-zA-Z0-9_\\.]+")) {
+        throw new IllegalArgumentException("Invalid detail table name");
+    }
+
+    String sql = """
+        SELECT MAX(PLDETAILSID)
+        FROM %s
+        WHERE MACHINEID = :machineId
+          AND PLMASTERID = :masterId
+        """.formatted(detailTableName);
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("machineId", machineId)
+            .addValue("masterId", masterId);
+
+    return namedParameterJdbcTemplate.queryForObject(
+            sql, params, String.class);
+}
 
     /** TODO port legacy runBulkSqls(detailTable, detailId, calendartime, flid). */
     // private void recalculate(String detailId, BigDecimal calendartime, String flid) {
@@ -503,4 +811,246 @@ if (!dtlId.equals(detail.getPldetailsid()))
 }
     private String orDash(String v) { return isBlank(v) ? "-" : v; }
     private BigDecimal nz(BigDecimal v) { return v == null ? BigDecimal.ZERO : v; }
+
+
+    public String getColName(String parameterCode) {
+
+    if (parameterCode == null) {
+        return null;
+    }
+
+    return switch (parameterCode) {
+
+        case "MCHAVLTIME" -> "MCHAVAILABLETIME";
+        case "PLANNEDQTY", "SPEEDVARIATION" -> "PLANNEDQTY";
+        case "PRODTIME" -> "PRODUCTIONTIME";
+        case "UNREPORTED" -> "UNACCOUNTEDTIME";
+        case "NOPLAN" -> "NOPLANINMINS";
+        case "NUMPRODUCTS" -> "NOOFPRODUCTS";
+        case "PARTNO" -> "PARTNO";
+        case "PARTNAME" -> "PARTNAME";
+        case "PRODUCTMODEL" -> "PRODUCTMODEL";
+        case "CYCLETIME" -> "CYCLETIME";
+        case "NUMOPERATOR" -> "OPERATORS";
+        case "OPNNO" -> "OPERATIONNO";
+        case "OPNDESC" -> "OPERATIONDESCRIPTION";
+        case "WNO" -> "WNO";
+        case "WEIGHT" -> "WEIGHT";
+        case "RAWMATERIALTYPE" -> "RAWMATERIALTYPE";
+        case "PRODUCEDQTY" -> "PRODUCEDQTY";
+
+        case "INSPECTEDQTY" -> "INSPECTEDQTY";
+        case "DEFECTNREWORK" -> "DEFECTSANDREWORKLOSS_ML";
+        case "REJECTEDQTY" -> "REJECTEDQTY";
+        case "REWORKQTY" -> "REWORKQTY";
+        case "QAACCEPTEDQTY" -> "QAACCEPTEDQTY";
+        case "DEFECTPREVPROC" -> "DEFECTPREVPROC";
+        case "DEFECTTIME" -> "DEFECTTIME_SL";
+        case "MRNMT" -> "MRNMT";
+        case "REPROCESS" -> "REPROCESSING";
+        case "PRODUCTIONLOSS" -> "PRODUCTIONLOSSES";
+
+        case "EF" -> "EQUIPMENTFAILURE_ML";
+        case "EFE" -> "EF_ELECTRICAL";
+        case "EFL" -> "EF_ELECTRONICS";
+        case "EFM" -> "EF_MECHANICAL";
+        case "EFJ" -> "EF_JIGFIXTURELOSS";
+        case "PEFL", "UEFL", "PROCESSFAILURE" -> parameterCode;
+
+        case "SETUPANDADJ" -> "SETUPANDADJUSTMENT_ML";
+        case "MODELCHANGEPART" -> "MODELCHANGEPART";
+        case "MODELCHANGE" -> "MODELCHANGE";
+        case "MODELADJUSTMENT" -> "MODELADJUSTMENT";
+        case "PARTMODEL" -> "PARTMODEL";
+
+        case "TOOLCHANGELOSS" -> "TOOLCHANGELOSS_ML";
+        case "STARTUPLOSS" -> "STARTUPLOSS_ML";
+        case "MS" -> "MINORSTOPPAGELOSS_ML";
+        case "SPEEDLOSS" -> "SPEEDLOSS_ML";
+        case "SHUTDOWNLOSS" -> "SHUTDOWNLOSS_ML";
+        case "MANAGEMENTLOSS" -> "MANAGEMENTLOSS_ML";
+
+        case "COMMONUTILITY" -> "COMMONUTILITYLOSS_SL";
+        case "MOTIONLOSS" -> "OPERATINGMOTIONLOSS_ML";
+        case "LINEORGLOSS" -> "LINEORGANISATIONLOSS_ML";
+        case "LOGISTICSLOSS" -> "LOGISTICSLOSS_ML";
+        case "MEASUREMENTLOSS" -> "MEASURINGANDADJLOSS_ML";
+        case "DIETOOLJIGLOSS" -> "DIETOOLANDJIGLOSS_ML";
+        case "ENERGYLOSS" -> "ENERGYLOSS_ML";
+        case "YIELDLOSS" -> "YIELDLOSS_ML";
+
+        case "RESULTS" -> "RESULTS";
+        case "LOADINGTIME" -> "LOADINGTIME";
+        case "PRODAVLTIME" -> "PRODUCTIONAVLTIME";
+        case "EFFPRODMINS" -> "EFFECTIVEPRODMINS";
+        case "ROA" -> "ROA";
+        case "ROP", "ROQ" -> "ROQ";
+        case "OEE" -> "OEEREMARKS";
+        case "REMARKS" -> "REMARKS";
+
+        default -> null;
+    };
+}
+
+
+public void createLossReasonLink(
+        BAL_PcsLossReasonLink link,
+        String detailId,
+        String lossId,
+        BigDecimal lossValue) throws Exception {
+
+    // 1. Get dynamic detail table
+    // String detailTableName = getDetailTable(
+    //         link.getCellid(),
+    //         link.getDate()
+    // );
+    String detailTableName = detailRepository.findDetailTable(link.getCellid());
+ 
+    // 2. Read loss configuration
+    String lossMapId = masterRepository.findLossMapField(lossId);
+
+    String parameterCode = masterRepository.findParameterCode(lossId);
+
+    String lossColName = getColName(parameterCode);
+//     if (lossColName == null || lossColName.isBlank()) {
+//     throw new IllegalArgumentException(
+//             "No loss column mapping found for parameter code: " + parameterCode
+//     );
+// }
+
+    // 3. Insert/update loss cause master
+    // Use the existing cause ID to check whether it exists.
+    boolean  causeExists = pcsTlLosscausemstRepository.existsById(link.getReasonid());
+    BAL_PcsTlLosscausemst pcsTlLosscausemst = new BAL_PcsTlLosscausemst();
+    if (pcsTlLosscausemst.getDescription() == null)
+        pcsTlLosscausemst.setDescription("{}");
+
+    if (pcsTlLosscausemst.getPhenomenaid() == null)
+        pcsTlLosscausemst.setPhenomenaid("{}");
+
+    if (pcsTlLosscausemst.getTempfield2() == null)
+        pcsTlLosscausemst.setTempfield2("{}");
+
+    if (pcsTlLosscausemst.getTempfield3() == null)
+        pcsTlLosscausemst.setTempfield3("{}");
+
+     // If it does not exist, generate a new ID and insert.
+    // If it exists, update its description.
+    if (!causeExists) {
+
+        // Generate new cause master ID
+        pcsTlLosscausemst.setKeyid(generate("PCS_TL_LOSSCAUSEMST", 15, "PLRK", "YY", "Y") );
+
+        pcsTlLosscausemst.setPhenomenaid(link.getReasonid());
+
+        pcsTlLosscausemst.setDescription(link.getCauseid());
+
+        // Replace cause text with generated cause key
+        link.setCauseid(pcsTlLosscausemst.getKeyid());
+
+        pcsTlLosscausemstRepository.save(pcsTlLosscausemst);
+
+    } else {
+
+        // Existing cause
+        pcsTlLosscausemst.setKeyid(link.getCauseid());
+
+        pcsTlLosscausemstRepository.save(pcsTlLosscausemst);
+    }
+
+   
+
+    // 4. Generate loss-reason link ID
+    // Use your existing sequence-number generation method.
+     link.setKeyid(generate(LINK_SEQ, 15, "PLRK", "YY", "Y"));
+
+    // 5. Check duplicate loss link
+    long count = linkRepository.countExistingLossLink(
+            link.getLossid(),
+            link.getReasonid(),
+            link.getCauseid(),
+            link.getRootcauseid(),
+            detailId,
+            link.getKeyid()
+    );
+
+    if (count > 0) {
+        throw new RuntimeException("LOSSEXIST,");
+    }
+
+    // 6. Save loss-reason link
+    linkRepository.saveAndFlush(link);
+
+    // 7. Update dynamic detail table
+    dynamicPcsDtlRepository.updateLossValue(
+            detailTableName,
+            detailId,
+            lossId,
+            lossMapId,
+            lossColName
+    );
+
+    // 8. Delete and reinsert ancillary-time records
+}
+
+
+
+public void updateLossReasonLink(
+        BAL_PcsLossReasonLink link,
+        String detailId,
+        String lossId,
+        BigDecimal lossValue) throws Exception {
+
+    // 1. Get dynamic detail table
+    // String detailTableName = getDetailTable(
+    //         link.getCellid(),
+    //         link.getDate()
+    // );
+    String detailTableName = detailRepository.findDetailTable(link.getCellid());
+ 
+    // 2. Read loss configuration
+    String lossMapId = masterRepository.findLossMapField(lossId);
+
+    String parameterCode = masterRepository.findParameterCode(lossId);
+
+    String lossColName = getColName(parameterCode);
+//     if (lossColName == null || lossColName.isBlank()) {
+//     throw new IllegalArgumentException(
+//             "No loss column mapping found for parameter code: " + parameterCode
+//     );
+// }
+
+   
+
+   
+
+    // 5. Check duplicate loss link
+    long count = linkRepository.countExistingLossLink(
+            link.getLossid(),
+            link.getReasonid(),
+            link.getCauseid(),
+            link.getRootcauseid(),
+            detailId,
+            link.getKeyid()
+    );
+
+    if (count > 0) {
+        throw new RuntimeException("LOSSEXIST,");
+    }
+
+    // 6. Save loss-reason link
+    linkRepository.saveAndFlush(link);
+
+    // 7. Update dynamic detail table
+    dynamicPcsDtlRepository.updateLossValue(
+            detailTableName,
+            detailId,
+            lossId,
+            lossMapId,
+            lossColName
+    );
+
+    // 8. Delete and reinsert ancillary-time records
+}
+
 }

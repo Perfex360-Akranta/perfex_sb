@@ -20,7 +20,7 @@ public class BAL_PcsLossSaveController {
     }
 
     @PostMapping("/saveLoss")
-    public ResponseEntity<BAL_PcsLossCapture> saveLossEntry(@RequestBody BalPcsLossSaveDto request) {
+    public ResponseEntity<BAL_PcsLossCapture> saveLossEntry(@RequestBody BalPcsLossSaveDto request) throws Exception {
         BAL_PcsLossCapture saved = balPcsLossService.saveLoss(request);
         return ResponseEntity.ok(saved);
     }

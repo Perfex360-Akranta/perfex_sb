@@ -53,4 +53,11 @@ public interface BAL_PcsLossCaptureRepository extends JpaRepository <BAL_PcsLoss
                                  @Param("f") String from,
                                  @Param("t") String to);
 
+//       @Query(value = """
+//     SELECT TO_CHAR(sftm_starttime, 'HH24:MI')
+//     FROM gen_tl_shiftmst
+//     WHERE sftm_keyid = :shiftId
+//     """, nativeQuery = true)
+// String findShiftStartTime(@Param("shiftId") String shiftId);                           
+
 }

@@ -1179,7 +1179,7 @@ return name;
 
         String cycle = calendartime == null ? "0" : calendartime.stripTrailingZeros().toPlainString();
         Integer rc = detailRepository.updatePlDtl(table, detailId, cycle, flid);
-        logger.info("bal_pcs_fn_updatepldtl table={} detail={} rc={}", table, detailId, rc);
+        logger.info("bal_pcs_fn_updatepldtl table={} detail={} rc={} cycle={} flid={}", table, detailId, rc,cycle,flid);
 
         if (rc == null)
             return;
@@ -1194,6 +1194,7 @@ return name;
             String unrep = detailRepository.findConfigValue("MAXUNREPORTED").trim();
             if (isValidKey(unrep) && isValidKey(cycle) && Double.parseDouble(cycle) > Integer.parseInt(unrep))
                 unrep = cycle;
+            
             throw new IllegalStateException("Unreported time exceeds " + unrep + " Mins");
         }
     }
@@ -1275,7 +1276,8 @@ return name;
         prod.setProductid(orDash(prod.getProductid()));
         prod.setProductmodel(orDash(prod.getProductmodel()));
         prod.setManpower(orDash(prod.getManpower()));
-        if (prod.getCycletime() == null) prod.setCycletime(0);
+        if (prod.getCycletime() == null) prod.setCycletime(BigDecimal.ZERO);
+       // if (prod.getCycletime() == null) prod.setCycletime(0);
         if (prod.getProducedqty() == null) prod.setProducedqty(0);
         if (prod.getRejectedqty() == null) prod.setRejectedqty(0);
         if (prod.getReworkqty() == null) prod.setReworkqty(0);
@@ -1486,9 +1488,15 @@ public int getShiftTotaltime(String startdate, String enddate, String shiftId) {
     } catch (java.text.ParseException e) {
         throw new IllegalArgumentException("Invalid date/time format: " + e.getMessage(), e);
     }
-
+    //today shift
     int difInMinutes = (int) ((date2.getTime() - date1.getTime()) / (1000 * 60));
-    difInMinutes = difInMinutes - breakTime;
+if (difInMinutes <= 0) {
+    difInMinutes += 24 * 60;     // shift crosses midnight
+}
+difInMinutes = difInMinutes - breakTime;
+
+    // int difInMinutes = (int) ((date2.getTime() - date1.getTime()) / (1000 * 60));
+    // difInMinutes = difInMinutes - breakTime;
 
     logger.info("getShiftTotaltime shift={} start={} end={} break={} total={}",
             shiftId, start, end, breakTime, difInMinutes);

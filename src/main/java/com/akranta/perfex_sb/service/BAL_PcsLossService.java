@@ -5,6 +5,6 @@ import com.akranta.perfex_sb.model.BAL_PcsLossCapture;
 
 public interface BAL_PcsLossService {
 
-    BAL_PcsLossCapture saveLoss(BalPcsLossSaveDto request);
+    BAL_PcsLossCapture saveLoss(BalPcsLossSaveDto request) throws Exception;
 
 }

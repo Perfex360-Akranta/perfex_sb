@@ -35,12 +35,14 @@ Integer recalculate(@Param("tbl") String tbl, @Param("id") String id,
                     @Param("avail") String avail, @Param("flid") String flid);
 
 
-                    @Query(value = "SELECT pprd_tempfield1 FROM bal_pcs_tl_productiondata "
+@Query(value = "SELECT pprd_tempfield1 FROM bal_pcs_tl_productiondata "
                  + "WHERE pprd_cellid = :cell AND pprd_shiftid = :shift "
                  + "AND pprd_date::date = :date AND pprd_hour = :hour LIMIT 1",
            nativeQuery = true)
     String findDetailIdByHour(@Param("cell") String cell, @Param("shift") String shift,
                               @Param("date") LocalDate date, @Param("hour") int hour);
+
+
 }
 
 

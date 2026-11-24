@@ -1,11 +1,13 @@
 package com.akranta.perfex_sb.model;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 
 @Entity 
 @Table (name = "bal_pcs_tl_productiondata", schema = "public")
@@ -40,7 +42,7 @@ public class BAL_PcsEntryProductiondata {
     private String manpower;
 
     @Column(name="pprd_cycletime", nullable = false)
-    private Integer cycletime;
+    private BigDecimal cycletime;
 
     @Column(name="pprd_producedqty", nullable = false)
     private Integer producedqty;
@@ -156,11 +158,11 @@ public class BAL_PcsEntryProductiondata {
         this.manpower = manpower;
     }
 
-    public Integer getCycletime() {
+    public BigDecimal getCycletime() {
         return cycletime;
     }
 
-    public void setCycletime(Integer cycletime) {
+    public void setCycletime(BigDecimal cycletime) {
         this.cycletime = cycletime;
     }
 

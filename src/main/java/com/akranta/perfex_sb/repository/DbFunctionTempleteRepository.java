@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -154,7 +155,7 @@ public Map<String, Object> callMultipeParamFunction(String functionName, Map<Int
                 int colCount = curRs.getMetaData().getColumnCount();
                 System.out.println("Cursor Column count: " + colCount);
                 while (curRs.next()) {
-                    Map<String, Object> row = new HashMap<>();
+                    Map<String, Object> row = new LinkedHashMap<>();
                     
                     for (int i = 1; i <= colCount; i++) {
                         row.put(curRs.getMetaData().getColumnLabel(i), curRs.getObject(i));

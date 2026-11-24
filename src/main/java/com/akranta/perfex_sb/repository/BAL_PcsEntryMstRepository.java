@@ -75,7 +75,7 @@ List<Object[]> findShiftStartEndTime(@Param("shiftId") String shiftId);
 //to get holiday
 @Query(value = """
         SELECT TO_CHAR(HOLM_DATE,'DD-Mon-YYYY'), HOLM_HOLIDAYFLAG
-        FROM BAL_GEN_TL_HOLIDAYMST
+        FROM GEN_TL_HOLIDAYMST
         WHERE TO_CHAR(HOLM_DATE,'YYYYMMDD') = TO_CHAR(TO_DATE(:entryDate,'DD-Mon-YYYY'),'YYYYMMDD')
           AND HOLM_FACTORY = :factId
         ORDER BY HOLM_DATE
@@ -130,5 +130,57 @@ List<Object[]> findCycleTime(@Param("productId") String productId);
         """, nativeQuery = true)
 List<Object> findShiftBreakTime(@Param("shiftId") String shiftId);
 
+
+@Query(value = """
+    SELECT COUNT(*)
+    FROM BAL_PCS_TL_MST
+    WHERE PRLM_ENTRYDATE::date = TO_DATE(:entryDate, 'DD-MON-YYYY HH24:MI')::date
+      AND PRLM_SHIFTID = :shiftId
+      AND PRLM_SECTIONID = :sectionId
+      AND PRLM_CELLID = :cellId
+    """, nativeQuery = true)
+Integer checkExistingMaster(
+        @Param("entryDate") String entryDate,
+        @Param("shiftId") String shiftId,
+        @Param("sectionId") String sectionId,
+        @Param("cellId") String cellId
+);
+
+@Query(value = """
+    SELECT PRLM_KEYID
+    FROM BAL_PCS_TL_MST
+    WHERE PRLM_ENTRYDATE::date = TO_DATE(:entryDate, 'DD-MON-YYYY HH24:MI')::date
+      AND PRLM_SHIFTID = :shiftId
+      AND PRLM_SECTIONID = :sectionId
+      AND PRLM_CELLID = :cellId
+    LIMIT 1
+    """, nativeQuery = true)
+String findExistingMasterId(
+        @Param("entryDate") String entryDate,
+        @Param("shiftId") String shiftId,
+        @Param("sectionId") String sectionId,
+        @Param("cellId") String cellId
+);
+
+@Query(value = """
+    SELECT plcm_mapfield
+    FROM pcs_tl_logconfiguration
+    WHERE plcm_keyid = :lossId
+    """, nativeQuery = true)
+String findLossMapField(@Param("lossId") String lossId);
+
+@Query(value = """
+    SELECT plcm_parametercode
+    FROM pcs_tl_logconfiguration
+    WHERE plcm_keyid = :lossId
+    """, nativeQuery = true)
+String findParameterCode(@Param("lossId") String lossId);
+
+@Query(value = """
+    SELECT COUNT(*)
+    FROM pcs_tl_losscausemst
+    WHERE plcs_keyid = :causeId
+    """, nativeQuery = true)
+long countCause(@Param("causeId") String causeId);
 
 }
