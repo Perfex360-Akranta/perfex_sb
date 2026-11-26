@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -629,4 +630,96 @@ public ResponseEntity<Void> deleteOtherCostActual(
             return ResponseEntity.internalServerError().build();
         }
     }
+    // ─── EmpCostController.java (add this endpoint inside the existing class) ──
+
+/**
+ * Check whether manpower cost rows exist for a Work Order (Actual / Estimate).
+ * Returns the row count as a String, e.g. { "count": "3" }
+ *
+ * GET /api/empcost/manpower-exists/{formType}/{woId}
+ */
+@GetMapping("/manpower-exists/{formType}/{woId}")
+public ResponseEntity<Map<String, Object>> checkManpowerExists(
+        @PathVariable String formType, @PathVariable String woId) {
+
+    logger.info("checkManpowerExists called – formType={}, woId={}", formType, woId);
+    try {
+        String count = service.getCheckManpowerExists(formType, woId);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("count", count);
+
+        return ResponseEntity.ok(body);
+    } catch (IllegalArgumentException e) {
+        logger.error("Invalid input: {}", e.getMessage());
+        return ResponseEntity.badRequest().build();
+    } catch (Exception e) {
+        logger.error("Error checking manpower exists: {}", e.getMessage(), e);
+        return ResponseEntity.internalServerError().build();
+    }
+}
+// ─── EmpCostController.java (add endpoint) ──────────────────────────────────
+
+/** GET /api/empcost/contractor/{empId} */
+@GetMapping("/contractor/{empId}")
+public ResponseEntity<List<Map<String, Object>>> getContractorCost(@PathVariable String empId) {
+    logger.info("getContractorCost called – empId={}", empId);
+    try {
+        return ResponseEntity.ok(service.getContractorCost(empId));
+    } catch (IllegalArgumentException e) {
+        logger.error("Invalid input: {}", e.getMessage());
+        return ResponseEntity.badRequest().build();
+    } catch (Exception e) {
+        logger.error("Error fetching contractor cost: {}", e.getMessage(), e);
+        return ResponseEntity.internalServerError().build();
+    }
+}
+// ─── EmpCostController.java (add endpoint) ──────────────────────────────────
+
+/** GET /api/empcost/spare/{spareId} */
+@GetMapping("/spare/{spareId}")
+public ResponseEntity<List<Map<String, Object>>> getSpareCost(@PathVariable String spareId) {
+    logger.info("getSpareCost called – spareId={}", spareId);
+    try {
+        return ResponseEntity.ok(service.getSpareCost(spareId));
+    } catch (IllegalArgumentException e) {
+        logger.error("Invalid input: {}", e.getMessage());
+        return ResponseEntity.badRequest().build();
+    } catch (Exception e) {
+        logger.error("Error fetching spare cost: {}", e.getMessage(), e);
+        return ResponseEntity.internalServerError().build();
+    }
+}
+// ─── EmpCostController.java (add endpoint) ──────────────────────────────────
+
+/** GET /api/empcost/service/{serviceId} */
+@GetMapping("/service/{serviceId}")
+public ResponseEntity<List<Map<String, Object>>> getServiceCost(@PathVariable String serviceId) {
+    logger.info("getServiceCost called – serviceId={}", serviceId);
+    try {
+        return ResponseEntity.ok(service.getServiceCost(serviceId));
+    } catch (IllegalArgumentException e) {
+        logger.error("Invalid input: {}", e.getMessage());
+        return ResponseEntity.badRequest().build();
+    } catch (Exception e) {
+        logger.error("Error fetching service cost: {}", e.getMessage(), e);
+        return ResponseEntity.internalServerError().build();
+    }
+}
+// ─── EmpCostController.java (add endpoint) ──────────────────────────────────
+
+/** GET /api/empcost/other/{otherId} */
+@GetMapping("/other/{otherId}")
+public ResponseEntity<List<Map<String, Object>>> getOtherCost(@PathVariable String otherId) {
+    logger.info("getOtherCost called – otherId={}", otherId);
+    try {
+        return ResponseEntity.ok(service.getOtherCost(otherId));
+    } catch (IllegalArgumentException e) {
+        logger.error("Invalid input: {}", e.getMessage());
+        return ResponseEntity.badRequest().build();
+    } catch (Exception e) {
+        logger.error("Error fetching other cost: {}", e.getMessage(), e);
+        return ResponseEntity.internalServerError().build();
+    }
+}
 }

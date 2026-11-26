@@ -272,105 +272,116 @@ private final wom_tl_communicationlogRepository communicationRepository;
     //  UPDATE PATH
     // =========================================================================
     private ResponseEntity<BdmDto> doUpdate(BAL_BdmTlMst master,
-                                                  BAL_BdmTlDtl detail,
-                                                  BdmDto   request) throws Exception {
+                                        BAL_BdmTlDtl detail,
+                                        BdmDto   request) throws Exception {
 
-        String masterKeyid = master.getKeyid();
+    String masterKeyid = master.getKeyid();
 
-        // ── 1. Load existing master ──────────────────────────────────────────
-        BAL_BdmTlMst existingMaster = masterRepository.findById(masterKeyid)
+    // ── 1. Load existing master ──────────────────────────────────────────
+    BAL_BdmTlMst existingMaster = masterRepository.findById(masterKeyid)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                    "BDM Master not found for keyid: " + masterKeyid));
+
+    // ── 2. Merge only non-null fields ────────────────────────────────────
+    mergeMaster(existingMaster, master);
+    existingMaster.setModifiedon(LocalDateTime.now());
+
+    BAL_BdmTlMst savedMaster = masterRepository.save(existingMaster);
+    logger.info("Updated BDM Master: {}", masterKeyid);
+
+    // ── 3. Work Order update (if wno already exists) ─────────────────────
+    WomTlWomst savedWom = null;
+    String existingWno = savedMaster.getWno();
+
+    if (!isBlankOrPlaceholder(existingWno)) {
+
+        WomTlWomst existingWom = womRepository.findById(existingWno)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "BDM Master not found for keyid: " + masterKeyid));
+                        "WOM Work Order not found for keyid: " + existingWno));
 
-        // ── 2. Merge only non-null fields (same style as WhyWhy impl) ────────
-        mergeMaster(existingMaster, master);
-        existingMaster.setModifiedon(LocalDateTime.now());
+        mergeWorkOrder(existingWom, savedMaster);
+        existingWom.setModifiedon(LocalDateTime.now());
 
-        BAL_BdmTlMst savedMaster = masterRepository.save(existingMaster);
-        logger.info("Updated BDM Master: {}", masterKeyid);
+        savedWom = womRepository.save(existingWom);
+        logger.info("Updated WOM Work Order: {}", existingWno);
 
-        // ── 3. Work Order update (if wno already exists) ─────────────────────
-        WomTlWomst savedWom = null;
-        String existingWno = savedMaster.getWno();
+    } else {
+        logger.warn("BDM {} has no wno (value='{}') – inserting a new WOM Work Order",
+                masterKeyid, existingWno);
 
-        // FIX: "{}" is used elsewhere in this class as a placeholder for "empty",
-        // so it must be treated the same as null/blank here — otherwise we try
-        // womRepository.findById("{}") and blow up with ResourceNotFoundException.
-        if (!isBlankOrPlaceholder(existingWno)) {
+        WomTlWomst newWom = buildWorkOrder(savedMaster, null);
 
-            WomTlWomst existingWom = womRepository.findById(existingWno)
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "WOM Work Order not found for keyid: " + existingWno));
+        String womKeyid = dbActionTemplate.getSequenceNumber(
+                SEQ_WOM, KEY_LEN_WOM, PREFIX_WOM, DATE_FORMAT, FORMAT_RESET);
 
-            mergeWorkOrder(existingWom, savedMaster);
-            existingWom.setModifiedon(LocalDateTime.now());
+        if (womKeyid == null || womKeyid.trim().isEmpty()) {
+            throw new RuntimeException("Failed to generate WOM Key ID during update fallback");
+        }
+        newWom.setKeyid(womKeyid);
+        savedMaster.setWno(womKeyid);
+        masterRepository.save(savedMaster);
 
-            savedWom = womRepository.save(existingWom);
-            logger.info("Updated WOM Work Order: {}", existingWno);
+        savedWom = womRepository.save(newWom);
+        logger.info("Inserted fallback WOM Work Order: {}", womKeyid);
+    }
+
+    // ── 4. Update / insert BDM Detail ────────────────────────────────────
+    BAL_BdmTlDtl savedDetail = null;
+    if (detail != null) {
+
+        // Find the detail row that already belongs to this master.
+        // Angular may send keyid = null / "undefined" / "{}", so never trust it alone.
+        BAL_BdmTlDtl existingDetail = null;
+
+        if (!isBlankOrPlaceholder(detail.getKeyid())) {
+            existingDetail = detailRepository.findById(detail.getKeyid()).orElse(null);
+        }
+        if (existingDetail == null) {
+            List<BAL_BdmTlDtl> found = detailRepository.findByBdmsKeyidNative(masterKeyid);
+            if (found != null && !found.isEmpty()) {
+                existingDetail = found.get(0);
+            }
+        }
+
+        if (existingDetail == null) {
+            // No detail yet for this master – insert it
+            String detailKeyid = dbActionTemplate.getSequenceNumber(
+                    SEQ_DETAIL, KEY_LEN_DETAIL, PREFIX_DETAIL, DATE_FORMAT, FORMAT_RESET);
+
+            if (detailKeyid == null || detailKeyid.trim().isEmpty()) {
+                throw new RuntimeException("Failed to generate BDM Detail Key ID during update");
+            }
+            detail.setKeyid(detailKeyid);
+            detail.setBdms_keyid(masterKeyid);
+
+            if (detail.getCreatedby() == null || detail.getCreatedby().trim().isEmpty()) {
+                detail.setCreatedby(savedMaster.getCreatedby());
+            }
+            detail.setCreatedon(LocalDateTime.now());
+            detail.setModifiedon(LocalDateTime.now());
+            detail.setActive('Y');
+
+            savedDetail = detailRepository.save(detail);
+            logger.info("Inserted new BDM Detail during update: {}", detailKeyid);
 
         } else {
-            // Edge case: wno missing on an existing BDM – insert a new WOM
-            logger.warn("BDM {} has no wno (value='{}') – inserting a new WOM Work Order",
-                    masterKeyid, existingWno);
+            // Update the existing row, keeping its key and original audit values
+            detail.setKeyid(existingDetail.getKeyid());
+            detail.setBdms_keyid(masterKeyid);
+            detail.setCreatedby(existingDetail.getCreatedby());
+            detail.setCreatedon(existingDetail.getCreatedon());
+            detail.setModifiedon(LocalDateTime.now());
+            if (detail.getActive() == null) detail.setActive('Y');
 
-            WomTlWomst newWom = buildWorkOrder(savedMaster, null);
-
-            String womKeyid = dbActionTemplate.getSequenceNumber(
-                    SEQ_WOM, KEY_LEN_WOM, PREFIX_WOM, DATE_FORMAT, FORMAT_RESET);
-
-            if (womKeyid == null || womKeyid.trim().isEmpty()) {
-                throw new RuntimeException("Failed to generate WOM Key ID during update fallback");
-            }
-            newWom.setKeyid(womKeyid);
-            savedMaster.setWno(womKeyid);
-            masterRepository.save(savedMaster);
-
-            savedWom = womRepository.save(newWom);
-            logger.info("Inserted fallback WOM Work Order: {}", womKeyid);
+            savedDetail = detailRepository.save(detail);
+            logger.info("Updated BDM Detail: {}", existingDetail.getKeyid());
         }
-
-        // ── 4. Update / insert BDM Detail ────────────────────────────────────
-        BAL_BdmTlDtl savedDetail = null;
-        if (detail != null) {
-
-            boolean detailIsNew = (detail.getKeyid() == null
-                    || detail.getKeyid().trim().isEmpty()
-                    || "undefined".equals(detail.getKeyid()));
-
-            if (detailIsNew) {
-                // Detail not yet saved for this master – insert it
-                String detailKeyid = dbActionTemplate.getSequenceNumber(
-                        SEQ_DETAIL, KEY_LEN_DETAIL, PREFIX_DETAIL, DATE_FORMAT, FORMAT_RESET);
-
-                if (detailKeyid == null || detailKeyid.trim().isEmpty()) {
-                    throw new RuntimeException("Failed to generate BDM Detail Key ID during update");
-                }
-                detail.setKeyid(detailKeyid);
-                detail.setBdms_keyid(masterKeyid);
-
-                if (detail.getCreatedby() == null || detail.getCreatedby().trim().isEmpty()) {
-                    detail.setCreatedby(savedMaster.getCreatedby());
-                }
-                detail.setCreatedon(LocalDateTime.now());
-                detail.setModifiedon(LocalDateTime.now());
-                detail.setActive('Y');
-
-                savedDetail = detailRepository.save(detail);
-                logger.info("Inserted new BDM Detail during update: {}", detailKeyid);
-
-            } else {
-                // Update existing detail
-                detail.setBdms_keyid(masterKeyid);
-                detail.setModifiedon(LocalDateTime.now());
-                savedDetail = detailRepository.save(detail);
-                logger.info("Updated BDM Detail: {}", detail.getKeyid());
-            }
-        }
-
-        // ── 5. Build and return response ─────────────────────────────────────
-        BdmDto result = buildResponse(savedMaster, savedDetail, savedWom, request);
-        return ResponseEntity.status(HttpStatus.OK).body(result);
     }
+
+    // ── 5. Build and return response ─────────────────────────────────────
+    BdmDto result = buildResponse(savedMaster, savedDetail, savedWom, request);
+    return ResponseEntity.status(HttpStatus.OK).body(result);
+}
 
     // =========================================================================
     //  HELPER : treat null, empty string, and the "{}" placeholder as blank
@@ -1924,5 +1935,89 @@ public int deleteOtherCostActual(String woid, String requestedby, String otherco
         logger.info("Fetched emp cost for empId: {}, rows: {}", empId, result.size());
         return result;
     }
+    // ─── EmpCostServiceImpl.java ────────────────────────────────────────────────
 
+@Override
+public String getCheckManpowerExists(String formType, String woId) throws Exception {
+
+    if (woId == null || woId.trim().isEmpty()) {
+        throw new IllegalArgumentException("woId is required");
+    }
+    if (formType == null || formType.trim().isEmpty()) {
+        throw new IllegalArgumentException("formType is required");
+    }
+
+    String count;
+    if ("Actual".equals(formType)) {
+        count = manpowercostplanRepository.countManpowerActual(woId);
+    } else if ("Estimate".equals(formType)) {
+        count = manpowercostplanRepository.countManpowerEstimate(woId);
+    } else {
+        throw new IllegalArgumentException("Unknown formType: " + formType);
+    }
+
+    logger.info("Manpower exists check – formType: {}, woId: {}, count: {}", formType, woId, count);
+    return count;
+}
+// ─── EmpCostServiceImpl.java (add inside the existing class) ────────────────
+
+@Override
+public List<Map<String, Object>> getContractorCost(String empId) throws Exception {
+    if (empId == null || empId.trim().isEmpty()) {
+        throw new IllegalArgumentException("empId is required");
+    }
+    List<Map<String, Object>> result = manpowercostplanRepository.getContractorCost(empId);
+    logger.info("Fetched contractor cost for id: {}, rows: {}", empId, result.size());
+    return result;
+}
+
+// ─── EmpCostServiceImpl.java (add inside the existing class) ────────────────
+
+@Override
+public List<Map<String, Object>> getSpareCost(String spareId) throws Exception {
+    if (spareId == null || spareId.trim().isEmpty()) {
+        throw new IllegalArgumentException("spareId is required");
+    }
+    List<Map<String, Object>> result = sparecostplanRepository.getSpareCost(spareId);
+    logger.info("Fetched spare cost for spareId: {}, rows: {}", spareId, result.size());
+    return result;
+}
+
+// ─── EmpCostServiceImpl.java (add inside the existing class) ────────────────
+
+@Override
+public List<Map<String, Object>> getServiceCost(String serviceId) throws Exception {
+    if (serviceId == null || serviceId.trim().isEmpty()) {
+        throw new IllegalArgumentException("serviceId is required");
+    }
+    List<Map<String, Object>> result = servicecostplanRepository.getServiceCost(serviceId);
+    logger.info("Fetched service cost for serviceId: {}, rows: {}", serviceId, result.size());
+    return result;
+}
+// ─── EmpCostServiceImpl.java (add inside the existing class) ────────────────
+
+@Override
+public List<Map<String, Object>> getUtilityCost(String utilityId, String effDate) throws Exception {
+    if (utilityId == null || utilityId.trim().isEmpty()) {
+        throw new IllegalArgumentException("utilityId is required");
+    }
+    if (effDate == null || effDate.trim().isEmpty()) {
+        throw new IllegalArgumentException("effDate is required (format: yyyy-MM-dd)");
+    }
+    List<Map<String, Object>> result = utilitycostplanRepository.getUtilityCost(utilityId, effDate);
+    logger.info("Fetched utility cost for utilityId: {}, effDate: {}, rows: {}",
+            utilityId, effDate, result.size());
+    return result;
+}
+// ─── EmpCostServiceImpl.java (add inside the existing class) ────────────────
+
+@Override
+public List<Map<String, Object>> getOtherCost(String otherId) throws Exception {
+    if (otherId == null || otherId.trim().isEmpty()) {
+        throw new IllegalArgumentException("otherId is required");
+    }
+    List<Map<String, Object>> result = othercostplanRepository.getOtherCost(otherId);
+    logger.info("Fetched other cost for otherId: {}, rows: {}", otherId, result.size());
+    return result;
+}
 }

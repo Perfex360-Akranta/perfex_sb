@@ -125,7 +125,7 @@ public class BalMonthlyPlanConfigServiceImpl implements BalMonthlyPlanConfigServ
         String newSpareConsumedKeyId = null;
 
         for (int i = 0; i < feedbackList.size(); i++) {
-            BalWorkOrderFeedbackDto feedbackListValue = feedbackList.get(0);
+            BalWorkOrderFeedbackDto feedbackListValue = feedbackList.get(i);
             BalPlmTlWoFeedBack feedback = feedbackListValue.getFeedback();
             feedback.setFeedbackid(newFeedbackId);
 

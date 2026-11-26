@@ -6,6 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import java.util.List;
+import java.util.Map;
+
 
 public interface BAL_WomTlOthercostplanRepository
         extends JpaRepository<BAL_WomTlOthercostplan, BAL_WomTlOthercostplanId> {
@@ -20,4 +23,12 @@ public interface BAL_WomTlOthercostplanRepository
     int deleteByCompositeKey(@Param("woid") String woid,
                               @Param("requestedby") String requestedby,
                               @Param("othercostmstid") String othercostmstid);
+                              // ─── EmployeeMstRepository.java (getEmpCost / getSpareCost pakkathula add pannunga) ──
+
+@Query(value = """
+    SELECT OTCM_SHORTNAME, OTCM_COSTNAME
+    FROM WOM_TL_OTHERCOSTMST
+    WHERE OTCM_ACTIVE = 'Y' AND OTCM_KEYID = :otherId
+    """, nativeQuery = true)
+List<Map<String, Object>> getOtherCost(@Param("otherId") String otherId);
 }

@@ -27,4 +27,7 @@ public interface BAL_WomTlManpowercostactualRepository
         """, nativeQuery = true)
     List<Map<String, Object>> getEmpCost(@Param("empId") String empId);
 
+
+    
+
 }

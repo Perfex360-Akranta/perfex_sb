@@ -3247,4 +3247,88 @@ public List<DropDownDto> getGmntShiftCombo(CommonFilterDto commonFilterDto)
 
         return repository.fillComboValues(comboFilter, params.toArray());
      }
+     //----------COST INFO---------------------------------------
+          @Override
+     public List<DropDownDto> getContractorCombo(CommonFilterDto commonFilterDto)
+     {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("PLM_TL_UNSKILLEDGRADEMST_I");
+        comboFilter.setIdField("UNGM_KEYID");
+        comboFilter.setNameField("UNGM_NAME");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+     }
+
+     @Override
+     public List<DropDownDto> getVendorCombo(CommonFilterDto commonFilterDto)
+     {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("GEN_TL_AMCVENDORMST");
+        comboFilter.setIdField("AMVM_KEYID");
+        comboFilter.setNameField("AMVM_NAME");
+        comboFilter.setCondSql(" AND AMVM_ACTIVE = 'Y' ");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+     }
+
+     @Override
+     public List<DropDownDto> getSparesCombo(CommonFilterDto commonFilterDto)
+     {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("GEN_TL_SPARESMST");
+        comboFilter.setIdField("SPRM_KEYID");
+        comboFilter.setNameField("SPRM_PARTNAME");
+        comboFilter.setCodeField("SPRM_PARTNO");
+
+        // NOTE: legacy applies a caller-supplied condSql string here. The
+        // servlet that builds it was not shared, so no filter is ported.
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+     }
+
+     @Override
+     public List<DropDownDto> getServiceCombo(CommonFilterDto commonFilterDto)
+     {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("GEN_TL_AMCVENDORMST");
+        comboFilter.setIdField("AMVM_KEYID");
+        comboFilter.setNameField("AMVM_NAME");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+     }
+
+     @Override
+     public List<DropDownDto> getUtilitiesCombo(CommonFilterDto commonFilterDto)
+     {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("GEN_TL_TOOLSMST");
+        comboFilter.setIdField("TOLM_KEYID");
+        comboFilter.setNameField("TOLM_NAME");
+        comboFilter.setCondSql(" AND TOLM_TYPE = 'U' AND TOLM_ACTIVE = 'Y' ");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+     }
+
+     @Override
+     public List<DropDownDto> getExpenseCombo(CommonFilterDto commonFilterDto)
+     {
+        ComboFilterDto comboFilter = new ComboFilterDto();
+        List<Object> params = new ArrayList<>();
+
+        comboFilter.setTableName("WOM_TL_OTHERCOSTMST");
+        comboFilter.setIdField("OTCM_KEYID");
+        comboFilter.setNameField("OTCM_COSTNAME");
+
+        return repository.fillComboValues(comboFilter, params.toArray());
+     }
 }

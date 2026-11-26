@@ -1140,5 +1140,46 @@ public ResponseEntity<List<DropDownDto>> getCostCentreCombo(@RequestBody(require
 
         );
     }
+//------------------------------------COST INO---------------------------
+    //Contractor combo
+    @PostMapping("/crt/combo_contractor")
+    public ResponseEntity<List<DropDownDto>> getContractorCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto) 
+    {
+        return ResponseEntity.ok(service.getContractorCombo(commonFilterDto));
+    }
 
+    //Vendor combo
+    @PostMapping("/crt/combo_vendor")
+    public ResponseEntity<List<DropDownDto>> getVendorCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto) 
+    {
+        return ResponseEntity.ok(service.getVendorCombo(commonFilterDto));
+    }
+
+    //Spares combo
+    @PostMapping("/crt/combo_spares")
+    public ResponseEntity<List<DropDownDto>> getSparesCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto) 
+    {
+        return ResponseEntity.ok(service.getSparesCombo(commonFilterDto));
+    }
+
+    //Service combo
+    @PostMapping("/crt/combo_service")
+    public ResponseEntity<List<DropDownDto>> getServiceCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto) 
+    {
+        return ResponseEntity.ok(service.getServiceCombo(commonFilterDto));
+    }
+
+    //Utilities combo
+    @PostMapping("/crt/combo_utilities")
+    public ResponseEntity<List<DropDownDto>> getUtilitiesCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto) 
+    {
+        return ResponseEntity.ok(service.getUtilitiesCombo(commonFilterDto));
+    }
+
+    //Expense combo
+    @PostMapping("/crt/combo_expense")
+    public ResponseEntity<List<DropDownDto>> getExpenseCombo(@RequestBody(required = false) CommonFilterDto commonFilterDto) 
+    {
+        return ResponseEntity.ok(service.getExpenseCombo(commonFilterDto));
+    }
 }

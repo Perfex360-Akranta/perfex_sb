@@ -59,6 +59,25 @@ int deleteOtherCostActual(String woid, String requestedby, String othercostmstid
     WomTlWomst getWorkOrder(String keyid) throws Exception;
     ResponseEntity<WomTlCommunicationlog> saveCommTxt(WomTlCommunicationlog log) throws Exception;
     List<Map<String, Object>> getCommText(String bdId) throws Exception;
+    
     List<Map<String, Object>> getEmpCost(String empId) throws Exception;
+    // ─── EmpCostService.java ────────────────────────────────────────────────────
 
+String getCheckManpowerExists(String formType, String woId) throws Exception;
+// ─── EmpCostService.java (add to interface) ─────────────────────────────────
+
+List<Map<String, Object>> getContractorCost(String empId) throws Exception;
+// ─── EmpCostService.java (add to interface) ─────────────────────────────────
+
+List<Map<String, Object>> getSpareCost(String spareId) throws Exception;
+    // ─── EmpCostService.java (add to interface) ─────────────────────────────────
+
+List<Map<String, Object>> getServiceCost(String serviceId) throws Exception;
+// ─── EmpCostService.java (add to interface) ─────────────────────────────────
+
+List<Map<String, Object>> getUtilityCost(String utilityId, String effDate) throws Exception;
+
+// ─── EmpCostService.java (add to interface) ─────────────────────────────────
+
+List<Map<String, Object>> getOtherCost(String otherId) throws Exception;
 }

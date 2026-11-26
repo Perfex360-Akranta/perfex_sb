@@ -212,6 +212,18 @@ public List<DropDownDto> getFinalTradeCombo(CommonFilterDto commonFilterDto);
 public List<DropDownDto> getCauseCombo(CommonFilterDto commonFilterDto);
 public List<DropDownDto> getAlarmCombo(CommonFilterDto commonFilterDto);
 public List<DropDownDto> getEmpGradeCombo(CommonFilterDto commonFilterDto);
+//------------------------------------COST INFO ---------------------------------
+public List<DropDownDto> getContractorCombo(CommonFilterDto commonFilterDto);
+
+public List<DropDownDto> getVendorCombo(CommonFilterDto commonFilterDto);
+
+public List<DropDownDto> getSparesCombo(CommonFilterDto commonFilterDto);
+
+public List<DropDownDto> getServiceCombo(CommonFilterDto commonFilterDto);
+
+public List<DropDownDto> getUtilitiesCombo(CommonFilterDto commonFilterDto);
+
+public List<DropDownDto> getExpenseCombo(CommonFilterDto commonFilterDto);
 
 
 
