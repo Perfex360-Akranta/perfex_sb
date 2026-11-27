@@ -64,6 +64,11 @@ public class BdmController {
         }
     }
 
+    @PostMapping("/savepcsbd")
+    public ResponseEntity<BdmDto> savepcsBdm(@RequestBody BdmDto request) throws Exception {
+    return service.savepcsBdm(request);
+}
+
     // ─── BdmController.java  (add this endpoint inside the existing class) ────
 
 /**

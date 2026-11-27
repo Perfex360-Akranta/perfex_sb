@@ -5,6 +5,9 @@ import com.akranta.perfex_sb.exception.ResourceNotFoundException;
 import com.akranta.perfex_sb.model.BAL_BdmTlDtl;
 import com.akranta.perfex_sb.model.BAL_BdmTlMst;
 import com.akranta.perfex_sb.model.BAL_BdmTlMultipleResp;
+import com.akranta.perfex_sb.model.BAL_BdmTlWhywhydtl;
+import com.akranta.perfex_sb.model.BAL_BdmTlWhywhymst;
+import com.akranta.perfex_sb.model.BAL_PcsTlPcsBd;
 import com.akranta.perfex_sb.model.BAL_WomTlManpowercostactual;
 import com.akranta.perfex_sb.model.BAL_WomTlManpowercostactualId;
 import com.akranta.perfex_sb.model.BAL_WomTlManpowercostplan;
@@ -30,6 +33,10 @@ import com.akranta.perfex_sb.model.WomTlWomst;
 import com.akranta.perfex_sb.repository.BAL_BdmTlDtlRepository;
 import com.akranta.perfex_sb.repository.BAL_BdmTlMstRepository;
 import com.akranta.perfex_sb.repository.BAL_BdmTlMultipleRespRepository;
+import com.akranta.perfex_sb.repository.BAL_BdmTlWhywhyLinkRepository;
+import com.akranta.perfex_sb.repository.BAL_BdmTlWhywhydtlRepository;
+import com.akranta.perfex_sb.repository.BAL_BdmTlWhywhymstRepository;
+import com.akranta.perfex_sb.repository.BAL_PcsTlPcsBdRepository;
 import com.akranta.perfex_sb.repository.BAL_WomTlManpowercostactualRepository;
 import com.akranta.perfex_sb.repository.BAL_WomTlManpowercostplanRepository;
 import com.akranta.perfex_sb.repository.BAL_WomTlOthercostactualRepository;
@@ -45,8 +52,13 @@ import com.akranta.perfex_sb.repository.wom_tl_communicationlogRepository;
 import com.akranta.perfex_sb.service.BdmService;
 import com.akranta.perfex_sb.service.DbActionTemplate;
 
+import io.jsonwebtoken.lang.Arrays;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -59,6 +71,7 @@ import java.time.LocalDateTime;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 
 
@@ -71,23 +84,32 @@ public class BdmServiceImpl implements BdmService {
    
 
     // ── Sequence identifiers (used by DbActionTemplate) ─────────────────────
-    private static final String SEQ_MASTER  = "BAL_BDM_TL_MST";
-    private static final String SEQ_DETAIL  = "BAL_BDM_TL_DTL";
-    private static final String SEQ_WOM     = "BAL_WOM_TL_WOMST";
+    private static final String SEQ_MASTER  = "BDM_TL_MST";
+    private static final String SEQ_DETAIL  = "BDM_TL_DTL";
+    private static final String SEQ_WOM     = "WOM_TL_WOMST";
      private static final String SEQ_COMM    = "WOM_TL_COMMUNICATIONLOG";
      // added here by priyanka  on 18/09/2026
-    private static final String SEQ_MULTI_RESP = "BAL_BDM_TL_MULTIPLE_RESP";
+    private static final String SEQ_MULTI_RESP = "BDM_TL_MULTIPLE_RESP";
     // end 
+    private static final String SEQ_PCSBD     = "PCS_TL_PCSBD";
+
+      private static final String SEQ_WW_MASTER = "BDM_TL_WHYWHYMST";
+    private static final String SEQ_WW_DETAIL = "BDM_TL_WHYWHYDTL";
+
 
     private static final int    KEY_LEN_MASTER = 20;
     private static final int    KEY_LEN_DETAIL = 14;
     private static final int    KEY_LEN_WOM    = 15;
      private static final int KEY_LEN_COMM = 11;
+     private static final int    KEY_LEN_PCSBD = 15;
+
 
     private static final String PREFIX_MASTER = "BDM";
     private static final String PREFIX_DETAIL = "BDA";
     private static final String PREFIX_WOM    = "MW";
     private static final String PREFIX_COMM = "CMC";
+    private static final String PREFIX_PCSBD  = "PCS";
+
 
     private static final String DATE_FORMAT  = "YY";
     private static final String FORMAT_RESET = "Y";
@@ -117,23 +139,32 @@ private final wom_tl_communicationlogRepository communicationRepository;
     // added here by priyanka on 18/09/2026
     private final BAL_BdmTlMultipleRespRepository multiRespRepo;
     // end
+    private final BAL_PcsTlPcsBdRepository pcsBdRepository;
+
+      private final BAL_BdmTlWhywhymstRepository whyWhyMstRepository;
+    private final BAL_BdmTlWhywhydtlRepository whyWhyDtlRepository;
+    private final BAL_BdmTlWhywhyLinkRepository whyWhyLinkRepository;
 
     public BdmServiceImpl(BAL_BdmTlMstRepository masterRepository,
-                          BAL_BdmTlDtlRepository detailRepository,
-                          WomTlWomstRepository   womRepository,
-                          BAL_WomTlManpowercostplanRepository manpowercostplanRepository,
-                           BAL_WomTlManpowercostactualRepository manpowercostactualRepository,
-                           BAL_WomTlSparecostplanRepository sparecostplanRepository,
-                           BAL_WomTlServicecostplanRepository servicecostplanRepository,
+                            BAL_BdmTlDtlRepository detailRepository,
+                            WomTlWomstRepository   womRepository,
+                            BAL_WomTlManpowercostplanRepository manpowercostplanRepository,
+                            BAL_WomTlManpowercostactualRepository manpowercostactualRepository,
+                            BAL_WomTlSparecostplanRepository sparecostplanRepository,
+                            BAL_WomTlServicecostplanRepository servicecostplanRepository,
                             BAL_WomTlUtilitycostplanRepository utilitycostplanRepository,
                             BAL_WomTlOthercostplanRepository othercostplanRepository, 
                             BAL_WomTlSparecostactualRepository sparecostactualRepository,
                             BAL_WomTlServicecostactualRepository servicecostactualRepository,
                             BAL_WomTlUtilitycostactualRepository utilitycostactualRepository,
-                              BAL_WomTlOthercostactualRepository othercostactualRepository,
-                              wom_tl_communicationlogRepository communicationRepository, 
-                              BAL_BdmTlMultipleRespRepository multiRespRepo,    // added by priyanka on 18/09/2026                             
-                                DbActionTemplate       dbActionTemplate) {
+                            BAL_WomTlOthercostactualRepository othercostactualRepository,
+                            wom_tl_communicationlogRepository communicationRepository, 
+                            BAL_BdmTlMultipleRespRepository multiRespRepo,    // added by priyanka on 18/09/2026   
+                            BAL_PcsTlPcsBdRepository pcsBdRepository, 
+                            BAL_BdmTlWhywhymstRepository whyWhyMstRepository,
+                            BAL_BdmTlWhywhydtlRepository whyWhyDtlRepository,
+                            BAL_BdmTlWhywhyLinkRepository whyWhyLinkRepository ,                      
+                            DbActionTemplate       dbActionTemplate) {
         this.masterRepository = masterRepository;
         this.detailRepository = detailRepository;
         this.manpowercostactualRepository = manpowercostactualRepository; 
@@ -151,8 +182,14 @@ private final wom_tl_communicationlogRepository communicationRepository;
          // added here by priyanka on 18/09/2026                        
         this.multiRespRepo    = multiRespRepo;
         //end
+        this.pcsBdRepository = pcsBdRepository;
 
+          this.whyWhyMstRepository = whyWhyMstRepository;
+        this.whyWhyDtlRepository = whyWhyDtlRepository;
+        this.whyWhyLinkRepository = whyWhyLinkRepository;
+        
         this.dbActionTemplate = dbActionTemplate;
+        
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -176,15 +213,17 @@ private final wom_tl_communicationlogRepository communicationRepository;
             return doInsert(master, detail, request);
         } else {
             return doUpdate(master, detail, request);
+
+
         }
     }
 
     // =========================================================================
-    //  INSERT PATH
+    // INSERT PATH
     // =========================================================================
     private ResponseEntity<BdmDto> doInsert(BAL_BdmTlMst master,
-                                                  BAL_BdmTlDtl detail,
-                                                  BdmDto   request) throws Exception {
+            BAL_BdmTlDtl detail,
+            BdmDto request) throws Exception {
 
         // ── 1. Apply ISYYMANDATRY config logic (mirrors legacy) ──────────────
         if (detail != null && detail.getErppoststatus() != null
@@ -208,9 +247,8 @@ private final wom_tl_communicationlogRepository communicationRepository;
         logger.info("Generated BDM Master Key ID: {}", masterKeyid);
 
         // ── 3. Work Order: insert new WOM record ─────────────────────────────
-        //WomTlWomst wom = buildWorkOrder(master);
+        // WomTlWomst wom = buildWorkOrder(master);
         WomTlWomst wom = buildWorkOrder(master, detail);
-
 
         String womKeyid = dbActionTemplate.getSequenceNumber(
                 SEQ_WOM, KEY_LEN_WOM, PREFIX_WOM, DATE_FORMAT, FORMAT_RESET);
@@ -219,7 +257,7 @@ private final wom_tl_communicationlogRepository communicationRepository;
             throw new RuntimeException("Failed to generate WOM Key ID");
         }
         wom.setKeyid(womKeyid);
-        master.setWno(womKeyid);   // bdms_wno <- woms_keyid
+        master.setWno(womKeyid); // bdms_wno <- woms_keyid
         logger.info("Generated WOM Key ID: {}", womKeyid);
 
         WomTlWomst savedWom = womRepository.save(wom);
@@ -268,15 +306,16 @@ private final wom_tl_communicationlogRepository communicationRepository;
                     savedMaster.getCellid(),
                     savedMaster.getMachineid(),
                     savedMaster.getShiftid(),
-                    savedMaster.getEntrydate(),   // bdms_entrydate -> mctm_shiftdate
-                    DEFAULT_CAL_TIME
-            );
+                    savedMaster.getEntrydate(), // bdms_entrydate -> mctm_shiftdate
+                    DEFAULT_CAL_TIME);
             logger.info("Inserted MACHINECALTIME for master: {}", masterKeyid);
         }
         // added by priyanka on 18/09/2026
         saveMultipleResponsibility(savedMaster.getKeyid(), request.getBdmMultiResp());
+        checkAndInsertRepeatedBdWhyWhy(savedMaster, savedDetail);
 
-        // end 
+
+        // end
 
         // ── 6. Build and return response ─────────────────────────────────────
         BdmDto result = buildResponse(savedMaster, savedDetail, savedWom, request);
@@ -331,129 +370,126 @@ private final wom_tl_communicationlogRepository communicationRepository;
  // =========================================================================
     //  UPDATE PATH
     // =========================================================================
-    private ResponseEntity<BdmDto> doUpdate(BAL_BdmTlMst master,
-                                                  BAL_BdmTlDtl detail,
-                                                  BdmDto   request) throws Exception {
+  private ResponseEntity<BdmDto> doUpdate(BAL_BdmTlMst master,
+                                        BAL_BdmTlDtl detail,
+                                        BdmDto   request) throws Exception {
 
-        String masterKeyid = master.getKeyid();
+    String masterKeyid = master.getKeyid();
 
-        // ── 1. Load existing master ──────────────────────────────────────────
-        BAL_BdmTlMst existingMaster = masterRepository.findById(masterKeyid)
+    // ── 1. Load existing master ──────────────────────────────────────────
+    BAL_BdmTlMst existingMaster = masterRepository.findById(masterKeyid)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                    "BDM Master not found for keyid: " + masterKeyid));
+
+    // ── 2. Merge only non-null fields ────────────────────────────────────
+    mergeMaster(existingMaster, master);
+    existingMaster.setModifiedon(LocalDateTime.now());
+
+    BAL_BdmTlMst savedMaster = masterRepository.save(existingMaster);
+    logger.info("Updated BDM Master: {}", masterKeyid);
+
+    // ── 3. Work Order update (if wno already exists) ─────────────────────
+    WomTlWomst savedWom = null;
+    String existingWno = savedMaster.getWno();
+
+    if (!isBlankOrPlaceholder(existingWno)) {
+
+        WomTlWomst existingWom = womRepository.findById(existingWno)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "BDM Master not found for keyid: " + masterKeyid));
+                        "WOM Work Order not found for keyid: " + existingWno));
 
-        // ── 2. Merge only non-null fields (same style as WhyWhy impl) ────────
-        mergeMaster(existingMaster, master);
-        existingMaster.setModifiedon(LocalDateTime.now());
+        mergeWorkOrder(existingWom, savedMaster);
+        existingWom.setModifiedon(LocalDateTime.now());
 
-        BAL_BdmTlMst savedMaster = masterRepository.save(existingMaster);
-        logger.info("Updated BDM Master: {}", masterKeyid);
+        savedWom = womRepository.save(existingWom);
+        logger.info("Updated WOM Work Order: {}", existingWno);
 
-        // ── 3. Work Order update (if wno already exists) ─────────────────────
-        WomTlWomst savedWom = null;
-        String existingWno = savedMaster.getWno();
+    } else {
+        logger.warn("BDM {} has no wno (value='{}') – inserting a new WOM Work Order",
+                masterKeyid, existingWno);
 
-        // FIX: "{}" is used elsewhere in this class as a placeholder for "empty",
-        // so it must be treated the same as null/blank here — otherwise we try
-        // womRepository.findById("{}") and blow up with ResourceNotFoundException.
-        if (!isBlankOrPlaceholder(existingWno)) {
+        WomTlWomst newWom = buildWorkOrder(savedMaster, null);
 
-            WomTlWomst existingWom = womRepository.findById(existingWno)
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "WOM Work Order not found for keyid: " + existingWno));
+        String womKeyid = dbActionTemplate.getSequenceNumber(
+                SEQ_WOM, KEY_LEN_WOM, PREFIX_WOM, DATE_FORMAT, FORMAT_RESET);
 
-            mergeWorkOrder(existingWom, savedMaster);
-            existingWom.setModifiedon(LocalDateTime.now());
-
-            savedWom = womRepository.save(existingWom);
-            logger.info("Updated WOM Work Order: {}", existingWno);
-
-        } else {
-            // Edge case: wno missing on an existing BDM – insert a new WOM
-            logger.warn("BDM {} has no wno (value='{}') – inserting a new WOM Work Order",
-                    masterKeyid, existingWno);
-
-            WomTlWomst newWom = buildWorkOrder(savedMaster, null);
-
-            String womKeyid = dbActionTemplate.getSequenceNumber(
-                    SEQ_WOM, KEY_LEN_WOM, PREFIX_WOM, DATE_FORMAT, FORMAT_RESET);
-
-            if (womKeyid == null || womKeyid.trim().isEmpty()) {
-                throw new RuntimeException("Failed to generate WOM Key ID during update fallback");
-            }
-            newWom.setKeyid(womKeyid);
-            savedMaster.setWno(womKeyid);
-            masterRepository.save(savedMaster);
-
-            savedWom = womRepository.save(newWom);
-            logger.info("Inserted fallback WOM Work Order: {}", womKeyid);
+        if (womKeyid == null || womKeyid.trim().isEmpty()) {
+            throw new RuntimeException("Failed to generate WOM Key ID during update fallback");
         }
+        newWom.setKeyid(womKeyid);
+        savedMaster.setWno(womKeyid);
+        masterRepository.save(savedMaster);
 
-        // ── 4. Update / insert BDM Detail ────────────────────────────────────
-        BAL_BdmTlDtl savedDetail = null;
-        if (detail != null) {
-
-            boolean detailIsNew = (detail.getKeyid() == null
-                    || detail.getKeyid().trim().isEmpty()
-                    || "undefined".equals(detail.getKeyid()));
-
-            if (detailIsNew) {
-                // Detail not yet saved for this master – insert it
-                String detailKeyid = dbActionTemplate.getSequenceNumber(
-                        SEQ_DETAIL, KEY_LEN_DETAIL, PREFIX_DETAIL, DATE_FORMAT, FORMAT_RESET);
-
-                if (detailKeyid == null || detailKeyid.trim().isEmpty()) {
-                    throw new RuntimeException("Failed to generate BDM Detail Key ID during update");
-                }
-                detail.setKeyid(detailKeyid);
-                detail.setBdms_keyid(masterKeyid);
-
-                if (detail.getCreatedby() == null || detail.getCreatedby().trim().isEmpty()) {
-                    detail.setCreatedby(savedMaster.getCreatedby());
-                }
-                detail.setCreatedon(LocalDateTime.now());
-                detail.setModifiedon(LocalDateTime.now());
-                detail.setActive('Y');
-
-                savedDetail = detailRepository.save(detail);
-                logger.info("Inserted new BDM Detail during update: {}", detailKeyid);
-
-            }
-            // commented and added by priyanka on 18/09/2026
-            // else {
-            //     // Update existing detail
-            //     detail.setBdms_keyid(masterKeyid);
-            //     detail.setModifiedon(LocalDateTime.now());
-            //     savedDetail = detailRepository.save(detail);
-            //     logger.info("Updated BDM Detail: {}", detail.getKeyid());
-            // }
-
-
-            else {
-                // Update existing detail – load managed entity, merge only non-null incoming fields
-                BAL_BdmTlDtl existingDetail = detailRepository.findById(detail.getKeyid())
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                        "BDM Detail not found for keyid: " + detail.getKeyid()));
-
-                mergeDetail(existingDetail, detail);
-                existingDetail.setBdms_keyid(masterKeyid);
-                existingDetail.setModifiedon(LocalDateTime.now());
-
-                savedDetail = detailRepository.save(existingDetail);
-                logger.info("Updated BDM Detail: {}", existingDetail.getKeyid());
-            }
-            // end
-        }
-        // added by priyanka on 18/09/2026
-        // ── 4a. Save/replace multiple responsibility entries ─────────────────
-        saveMultipleResponsibility(savedMaster.getKeyid(), request.getBdmMultiResp()); 
-        // end
-
-        // ── 5. Build and return response ─────────────────────────────────────
-        BdmDto result = buildResponse(savedMaster, savedDetail, savedWom, request);
-        return ResponseEntity.status(HttpStatus.OK).body(result);
+        savedWom = womRepository.save(newWom);
+        logger.info("Inserted fallback WOM Work Order: {}", womKeyid);
     }
 
+    // ── 4. Update / insert BDM Detail ────────────────────────────────────
+    BAL_BdmTlDtl savedDetail = null;
+    //25-11-26
+     String prevWwno = null; 
+    if (detail != null) {
+ 
+        // Find the detail row that already belongs to this master.
+        // Angular may send keyid = null / "undefined" / "{}", so never trust it alone.
+        BAL_BdmTlDtl existingDetail = null;
+
+
+        if (!isBlankOrPlaceholder(detail.getKeyid())) {
+            existingDetail = detailRepository.findById(detail.getKeyid()).orElse(null);
+        }
+        if (existingDetail == null) {
+            List<BAL_BdmTlDtl> found = detailRepository.findByBdmsKeyidNative(masterKeyid);
+            if (found != null && !found.isEmpty()) {
+                existingDetail = found.get(0);
+            }
+        }
+ if (existingDetail != null) {
+            prevWwno = existingDetail.getWwno();
+        }
+        if (existingDetail == null) {
+            // No detail yet for this master – insert it
+            String detailKeyid = dbActionTemplate.getSequenceNumber(
+                    SEQ_DETAIL, KEY_LEN_DETAIL, PREFIX_DETAIL, DATE_FORMAT, FORMAT_RESET);
+
+            if (detailKeyid == null || detailKeyid.trim().isEmpty()) {
+                throw new RuntimeException("Failed to generate BDM Detail Key ID during update");
+            }
+            detail.setKeyid(detailKeyid);
+            detail.setBdms_keyid(masterKeyid);
+
+            if (detail.getCreatedby() == null || detail.getCreatedby().trim().isEmpty()) {
+                detail.setCreatedby(savedMaster.getCreatedby());
+            }
+            detail.setCreatedon(LocalDateTime.now());
+            detail.setModifiedon(LocalDateTime.now());
+            detail.setActive('Y');
+
+            savedDetail = detailRepository.save(detail);
+            logger.info("Inserted new BDM Detail during update: {}", detailKeyid);
+
+        } else {
+            // Update the existing row, keeping its key and original audit values
+            detail.setKeyid(existingDetail.getKeyid());
+            detail.setBdms_keyid(masterKeyid);
+            detail.setCreatedby(existingDetail.getCreatedby());
+            detail.setCreatedon(existingDetail.getCreatedon());
+            detail.setModifiedon(LocalDateTime.now());
+            if (detail.getActive() == null) detail.setActive('Y');
+
+            savedDetail = detailRepository.save(detail);
+            logger.info("Updated BDM Detail: {}", existingDetail.getKeyid());
+        }
+         if (savedDetail != null && isBlankOrPlaceholder(prevWwno)) {
+        checkAndInsertRepeatedBdWhyWhy(savedMaster, savedDetail);
+    }
+
+    }
+
+    // ── 5. Build and return response ─────────────────────────────────────
+    BdmDto result = buildResponse(savedMaster, savedDetail, savedWom, request);
+    return ResponseEntity.status(HttpStatus.OK).body(result);
+}
     // =========================================================================
     //  HELPER : treat null, empty string, and the "{}" placeholder as blank
     // =========================================================================
@@ -2037,4 +2073,253 @@ public int deleteOtherCostActual(String woid, String requestedby, String otherco
             throw e;
         }
     }
-}
+
+    @Transactional(rollbackFor = Exception.class)
+    public ResponseEntity<BdmDto> savepcsBdm(BdmDto request) throws Exception {
+        // first line inside savepcsBdm
+logger.info(">>> savepcsBdm reached");
+        BAL_BdmTlMst master = request.getMaster();
+        BAL_BdmTlDtl detail = request.getDetail();
+
+        if (master == null) {
+            throw new RuntimeException("BDM Master data is required");
+        }
+
+        // ── Decide INSERT vs UPDATE ──────────────────────────────────────────
+        boolean isInsert = (master.getKeyid() == null || master.getKeyid().trim().isEmpty());
+
+        if (isInsert) {
+            return dopcsInsert(master, detail, request);
+        } else {
+            return doUpdate(master, detail, request);
+
+
+        }
+    }
+
+ private ResponseEntity<BdmDto> dopcsInsert(BAL_BdmTlMst master,
+            BAL_BdmTlDtl detail,
+            BdmDto request) throws Exception {
+
+        // ── 1. Apply ISYYMANDATRY config logic (mirrors legacy) ──────────────
+        if (detail != null && detail.getErppoststatus() != null
+                && detail.getErppoststatus() == 'C') {
+
+            String yyMand = masterRepository.getConfigValue(CONFIG_ISYYMANDATRY);
+            if ("Y".equals(yyMand)) {
+                detail.setErppoststatus('W');
+                logger.info("ISYYMANDATRY=Y: overriding erppoststatus from C to W");
+            }
+        }
+
+        // ── 2. Generate BDM Master key ───────────────────────────────────────
+        String masterKeyid = dbActionTemplate.getSequenceNumber(
+                SEQ_MASTER, KEY_LEN_MASTER, PREFIX_MASTER, DATE_FORMAT, FORMAT_RESET);
+
+        if (masterKeyid == null || masterKeyid.trim().isEmpty()) {
+            throw new RuntimeException("Failed to generate BDM Master Key ID");
+        }
+        master.setKeyid(masterKeyid);
+        logger.info("Generated BDM Master Key ID: {}", masterKeyid);
+
+        // ── 3. Work Order: insert new WOM record ─────────────────────────────
+        // WomTlWomst wom = buildWorkOrder(master);
+        WomTlWomst wom = buildWorkOrder(master, detail);
+
+        String womKeyid = dbActionTemplate.getSequenceNumber(
+                SEQ_WOM, KEY_LEN_WOM, PREFIX_WOM, DATE_FORMAT, FORMAT_RESET);
+
+        if (womKeyid == null || womKeyid.trim().isEmpty()) {
+            throw new RuntimeException("Failed to generate WOM Key ID");
+        }
+        wom.setKeyid(womKeyid);
+        master.setWno(womKeyid); // bdms_wno <- woms_keyid
+        logger.info("Generated WOM Key ID: {}", womKeyid);
+
+        WomTlWomst savedWom = womRepository.save(wom);
+        logger.info("Saved WOM Work Order: {}", womKeyid);
+
+        // ── 4. Save BDM Master ───────────────────────────────────────────────
+        if (master.getCreatedon() == null) {
+            master.setCreatedon(LocalDateTime.now());
+        }
+        master.setModifiedon(LocalDateTime.now());
+        master.setActive('Y');
+
+        BAL_BdmTlMst savedMaster = masterRepository.save(master);
+        logger.info("Saved BDM Master: {}", masterKeyid);
+
+        // ── 5. Save BDM Detail + Machine Calendar Time ───────────────────────
+        BAL_BdmTlDtl savedDetail = null;
+        if (detail != null) {
+
+            // Generate detail key
+            String detailKeyid = dbActionTemplate.getSequenceNumber(
+                    SEQ_DETAIL, KEY_LEN_DETAIL, PREFIX_DETAIL, DATE_FORMAT, FORMAT_RESET);
+
+            if (detailKeyid == null || detailKeyid.trim().isEmpty()) {
+                throw new RuntimeException("Failed to generate BDM Detail Key ID");
+            }
+            detail.setKeyid(detailKeyid);
+            detail.setBdms_keyid(masterKeyid);
+
+            if (detail.getCreatedby() == null || detail.getCreatedby().trim().isEmpty()) {
+                detail.setCreatedby(savedMaster.getCreatedby());
+            }
+            if (detail.getCreatedon() == null) {
+                detail.setCreatedon(LocalDateTime.now());
+            }
+            detail.setModifiedon(LocalDateTime.now());
+            detail.setActive('Y');
+
+            savedDetail = detailRepository.save(detail);
+            logger.info("Saved BDM Detail: {}", detailKeyid);
+
+            // ── 5a. Insert MACHINECALTIME (native query, mirrors legacy SQL) ──
+            womRepository.insertMachineCalTime(
+                    savedMaster.getFactoryid(),
+                    savedMaster.getSectionid(),
+                    savedMaster.getCellid(),
+                    savedMaster.getMachineid(),
+                    savedMaster.getShiftid(),
+                    savedMaster.getEntrydate(), // bdms_entrydate -> mctm_shiftdate
+                    DEFAULT_CAL_TIME);
+            logger.info("Inserted MACHINECALTIME for master: {}", masterKeyid);
+        }
+        logger.info(">>> Before PCS BD insert");
+       // BAL_PcsTlPcsBd savedPcsBd = savePcsBd(savedMaster.getKeyid());
+      BAL_PcsTlPcsBd savedPcsBd = savePcsBd(savedMaster.getKeyid(), savedMaster.getCreatedby());
+        logger.info(">>> After PCS BD save");
+        
+        // added by priyanka on 18/09/2026
+        saveMultipleResponsibility(savedMaster.getKeyid(), request.getBdmMultiResp());
+        checkAndInsertRepeatedBdWhyWhy(savedMaster, savedDetail);
+
+
+        // end
+
+        // ── 6. Build and return response ─────────────────────────────────────
+        BdmDto result = buildResponse(savedMaster, savedDetail, savedWom, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
+    }
+
+    //private BAL_PcsTlPcsBd savePcsBd(String bdmsKeyid) throws Exception {
+    private BAL_PcsTlPcsBd savePcsBd(String bdmsKeyid, String createdby) throws Exception {
+
+        String pcsKeyid = dbActionTemplate.getSequenceNumber(
+                SEQ_PCSBD, KEY_LEN_PCSBD, PREFIX_PCSBD, DATE_FORMAT, FORMAT_RESET);
+
+        if (pcsKeyid == null || pcsKeyid.trim().isEmpty()) {
+            throw new RuntimeException("Failed to generate PCS BD Key ID");
+        }
+
+        BAL_PcsTlPcsBd pcsBd = new BAL_PcsTlPcsBd();
+        pcsBd.setKeyid(pcsKeyid);
+        pcsBd.setBdmKeyid(bdmsKeyid);
+        pcsBd.setActive('Y');
+        pcsBd.setCreatedon(LocalDateTime.now());
+        pcsBd.setCreatedby(createdby);
+
+        BAL_PcsTlPcsBd saved = pcsBdRepository.save(pcsBd);
+        logger.info("Saved PCS BD: {}", pcsKeyid);
+        return saved;
+    }
+
+    private void checkAndInsertRepeatedBdWhyWhy(BAL_BdmTlMst bdm, BAL_BdmTlDtl bdmDetail) throws Exception {
+
+        if (bdm == null || bdmDetail == null) {
+            return;
+        }
+
+        // repeatedbdno holds the earlier BD number (e.g. BDM-26-0000000000080), not the why-why key
+        String repeatedBdNo = bdm.getRepeatedbdno();
+
+        if (isBlankOrPlaceholder(repeatedBdNo)
+                || !"Y".equals(String.valueOf(bdm.getRepeatedbdflag()))) {
+            return;
+        }
+
+        // 1. Resolve the why-why key from the repeated BD's detail row (bdan_wwno)
+        String repeatedWwNo = null;
+        List<BAL_BdmTlDtl> repeatedDtls = detailRepository.findByBdmsKeyidNative(repeatedBdNo);
+        if (repeatedDtls != null && !repeatedDtls.isEmpty()) {
+            repeatedWwNo = repeatedDtls.get(0).getWwno();
+        }
+
+        if (isBlankOrPlaceholder(repeatedWwNo) || repeatedWwNo.equals(bdmDetail.getWwno())) {
+            logger.info("Repeated BD {} has no Why-Why to copy (wwno={})", repeatedBdNo, repeatedWwNo);
+            return;
+        }
+
+        // 2. Source why-why master + details
+        BAL_BdmTlWhywhymst source = whyWhyMstRepository.findById(repeatedWwNo).orElse(null);
+        if (source == null) {
+            logger.warn("Repeated BD Why-Why {} not found - copy skipped for BDM {}",
+                    repeatedWwNo, bdm.getKeyid());
+            return;
+        }
+        List<BAL_BdmTlWhywhydtl> sourceDetails = whyWhyDtlRepository.findByWwmsKeyidOrderBySlno(repeatedWwNo);
+
+        // 3. New why-why master (copy + override, like the legacy setters)
+        BAL_BdmTlWhywhymst newMst = new BAL_BdmTlWhywhymst();
+        BeanUtils.copyProperties(source, newMst);
+
+        String newWwKeyid = dbActionTemplate.getSequenceNumber(SEQ_WW_MASTER, 12, "YY", "YYMM", " ");
+        if (newWwKeyid == null || newWwKeyid.trim().isEmpty()) {
+            throw new RuntimeException("Failed to generate Why Why Master Key ID");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        newMst.setKeyid(newWwKeyid);
+        newMst.setCreatedby(bdm.getCreatedby());
+        newMst.setCreatedon(bdm.getCreatedon() != null ? bdm.getCreatedon() : now);
+        newMst.setModifiedon(bdm.getModifiedon() != null ? bdm.getModifiedon() : now);
+        newMst.setDate(bdm.getEntrydate());
+        newMst.setProblem(bdm.getProblemdescription() != null ? bdm.getProblemdescription() : source.getProblem());
+        newMst.setRefdocno(bdm.getKeyid());
+        newMst.setReportdatetime(bdm.getEntrydate() != null ? bdm.getEntrydate() : now);
+
+        whyWhyMstRepository.save(newMst);
+        logger.info("Repeated BD: copied Why-Why {} -> {}", repeatedWwNo, newWwKeyid);
+
+        // 4. New why-why details
+        BAL_BdmTlWhywhydtl lastDetail = null;
+        for (BAL_BdmTlWhywhydtl src : sourceDetails) {
+            BAL_BdmTlWhywhydtl d = new BAL_BdmTlWhywhydtl();
+            BeanUtils.copyProperties(src, d);
+
+            String dKeyid = dbActionTemplate.getSequenceNumber(SEQ_WW_DETAIL, 12, "YYD", "YY", "Y");
+            if (dKeyid == null || dKeyid.trim().isEmpty()) {
+                throw new RuntimeException("Failed to generate Why Why Detail Key ID");
+            }
+            d.setKeyid(dKeyid);
+            d.setWwmsKeyid(newWwKeyid);
+            d.setCreatedby(newMst.getCreatedby());
+            d.setCreatedon(now);
+            d.setModifiedon(now);
+
+            lastDetail = whyWhyDtlRepository.save(d);
+        }
+
+        // 5. Update BDM detail (legacy updateYYSql) - root cause / action from the LAST why row
+        String rootCause = null;
+        String counterMeasure = null;
+        if (lastDetail != null) {
+            rootCause = isBlankOrPlaceholder(lastDetail.getAnswer()) ? null : lastDetail.getAnswer();
+            counterMeasure = isBlankOrPlaceholder(lastDetail.getAction()) ? null : lastDetail.getAction();
+        }
+
+        int rows = whyWhyLinkRepository.updateBreakdownDetail(
+                bdm.getKeyid(),
+                newWwKeyid,
+                isBlankOrPlaceholder(newMst.getRootcauseid()) ? null : newMst.getRootcauseid(),
+                rootCause,
+                counterMeasure,
+                null,   // classificationId (legacy passes null here)
+                isBlankOrPlaceholder(newMst.getCountermeasure()) ? null : newMst.getCountermeasure());
+
+        logger.info("BAL_BDM_TL_DTL updated with new Why-Why {} : {} row(s)", newWwKeyid, rows);
+    }
+    
+
+    }

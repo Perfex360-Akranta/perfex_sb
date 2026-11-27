@@ -26,6 +26,8 @@ public interface BdmService {
 
     
     ResponseEntity<BdmDto> saveBdm(BdmDto request) throws Exception;
+    ResponseEntity<BdmDto> savepcsBdm(BdmDto request) throws Exception;
+
      List<Map<String, Object>> getGridSummary(String woId) throws Exception;
     
 

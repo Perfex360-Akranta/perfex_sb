@@ -32,4 +32,6 @@ public interface BAL_BdmTlWhywhydtlRepository extends JpaRepository<BAL_BdmTlWhy
         ORDER BY wwdt_keyid
         """, nativeQuery = true)
     List<Map<String, Object>> getAnalysisData(@Param("masdetkeyid") String masdetkeyid);
+
+    List<BAL_BdmTlWhywhydtl> findByWwmsKeyidOrderBySlno(String wwmsKeyid);
 }

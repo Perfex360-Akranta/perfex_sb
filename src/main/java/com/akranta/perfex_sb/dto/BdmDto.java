@@ -2,6 +2,7 @@ package com.akranta.perfex_sb.dto;
 
 import com.akranta.perfex_sb.model.BAL_BdmTlMst;
 import com.akranta.perfex_sb.model.BAL_BdmTlMultipleResp;
+import com.akranta.perfex_sb.model.BAL_PcsTlPcsBd;
 
 import java.util.List;
 
@@ -18,6 +19,10 @@ public class BdmDto {
      //  added by priyanka on 18/09/2026
     private List<BAL_BdmTlMultipleResp> bdmMultiResp;
     // end
+    private BAL_PcsTlPcsBd pcsBd;
+
+    public BAL_PcsTlPcsBd getPcsBd() { return pcsBd; }
+    public void setPcsBd(BAL_PcsTlPcsBd pcsBd) { this.pcsBd = pcsBd; } 
 
     public BAL_BdmTlMst getMaster() { return master; }
     public void setMaster(BAL_BdmTlMst master) { this.master = master; }
