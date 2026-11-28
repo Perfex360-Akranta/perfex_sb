@@ -41,6 +41,8 @@ import com.akranta.perfex_sb.repository.BAL_WomTlUtilitycostplanRepository;
 import com.akranta.perfex_sb.repository.WomTlWomstRepository;
 import com.akranta.perfex_sb.repository.wom_tl_communicationlogRepository;
 import com.akranta.perfex_sb.service.BdmService;
+import com.akranta.perfex_sb.model.BAL_BdmTlMultipleResp;
+import com.akranta.perfex_sb.repository.BAL_BdmTlMultipleRespRepository;
 import com.akranta.perfex_sb.service.DbActionTemplate;
 
 import org.slf4j.Logger;
@@ -107,6 +109,7 @@ public class BdmServiceImpl implements BdmService {
     private final BAL_WomTlServicecostactualRepository servicecostactualRepository;
     private final BAL_WomTlUtilitycostactualRepository   utilitycostactualRepository;
      private final BAL_WomTlOthercostactualRepository     othercostactualRepository;
+     private final BAL_BdmTlMultipleRespRepository multiRespRepo;
 private final wom_tl_communicationlogRepository communicationRepository;
     private final DbActionTemplate       dbActionTemplate;
 
@@ -123,6 +126,7 @@ private final wom_tl_communicationlogRepository communicationRepository;
                             BAL_WomTlServicecostactualRepository servicecostactualRepository,
                             BAL_WomTlUtilitycostactualRepository utilitycostactualRepository,
                               BAL_WomTlOthercostactualRepository othercostactualRepository,
+                              BAL_BdmTlMultipleRespRepository multiRespRepo,
                               wom_tl_communicationlogRepository communicationRepository,                              
                                 DbActionTemplate       dbActionTemplate) {
         this.masterRepository = masterRepository;
@@ -139,6 +143,7 @@ private final wom_tl_communicationlogRepository communicationRepository;
          this.utilitycostactualRepository = utilitycostactualRepository;
          this.othercostactualRepository = othercostactualRepository;
          this.communicationRepository = communicationRepository;
+         this.multiRespRepo =multiRespRepo;
 
         this.dbActionTemplate = dbActionTemplate;
     }
@@ -2020,4 +2025,40 @@ public List<Map<String, Object>> getOtherCost(String otherId) throws Exception {
     logger.info("Fetched other cost for otherId: {}, rows: {}", otherId, result.size());
     return result;
 }
+    // =========================================================================
+    //  DELETE BDM  (legacy BAL_BdmTlMstDaoImpl.delete)
+    // =========================================================================
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteBdm(String keyid) throws Exception {
+
+        if (isBlankOrPlaceholder(keyid)) {
+            throw new IllegalArgumentException("BDM keyid is required");
+        }
+
+        // 1. Reset the linked work order back to BOOKED
+        List<String> woIds = womRepository.findWoIdsByActivityId(keyid);
+        for (String woId : woIds) {
+            if (!isBlankOrPlaceholder(woId)) {
+                int rows = womRepository.resetWorkOrderOnBdDelete(woId);
+                logger.info("WOM {} reset on BDM delete : {} row(s)", woId, rows);
+            }
+        }
+
+        // 2. Detail
+        int dtl = detailRepository.deleteByBdmsKeyidNative(keyid);
+        logger.info("Deleted {} BDM detail row(s) for {}", dtl, keyid);
+
+        // 3. Master
+        int mst = masterRepository.deleteByKeyidNative(keyid);
+        if (mst == 0) {
+            throw new ResourceNotFoundException("BDM Master not found for keyid: " + keyid);
+        }
+
+        // 4. SAP external service + 5. multiple responsibility
+        womRepository.deleteSapExternalService(keyid);
+        multiRespRepo.deleteByRefid(keyid);
+
+        logger.info("Deleted BDM {}", keyid);
+    }
 }

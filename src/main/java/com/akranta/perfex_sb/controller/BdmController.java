@@ -706,6 +706,12 @@ public ResponseEntity<List<Map<String, Object>>> getServiceCost(@PathVariable St
         return ResponseEntity.internalServerError().build();
     }
 }
+    @GetMapping("/utility-cost/rate")
+    public ResponseEntity<List<Map<String, Object>>> getUtilityCost(
+            @RequestParam String utilityId,
+            @RequestParam String effDate) throws Exception {
+        return ResponseEntity.ok(service.getUtilityCost(utilityId, effDate));
+    }
 // ─── EmpCostController.java (add endpoint) ──────────────────────────────────
 
 /** GET /api/empcost/other/{otherId} */
@@ -722,4 +728,21 @@ public ResponseEntity<List<Map<String, Object>>> getOtherCost(@PathVariable Stri
         return ResponseEntity.internalServerError().build();
     }
 }
+    @DeleteMapping("/delete/{keyid}")
+    public ResponseEntity<Void> deleteBdm(@PathVariable String keyid) {
+        logger.info("deleteBdm called – keyid={}", keyid);
+        try {
+            service.deleteBdm(keyid);
+            return ResponseEntity.noContent().build();
+        } catch (ResourceNotFoundException e) {
+            logger.error("BDM not found: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid input: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            logger.error("Error deleting BDM: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 }

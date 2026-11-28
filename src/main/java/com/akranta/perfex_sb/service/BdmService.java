@@ -80,4 +80,6 @@ List<Map<String, Object>> getUtilityCost(String utilityId, String effDate) throw
 // ─── EmpCostService.java (add to interface) ─────────────────────────────────
 
 List<Map<String, Object>> getOtherCost(String otherId) throws Exception;
+//-----delete 
+    void deleteBdm(String keyid) throws Exception;
 }

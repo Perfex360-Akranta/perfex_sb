@@ -4,6 +4,7 @@ package com.akranta.perfex_sb.repository;
 
 import com.akranta.perfex_sb.model.BAL_BdmTlMst;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -25,6 +26,10 @@ public interface BAL_BdmTlMstRepository extends JpaRepository<BAL_BdmTlMst, Stri
         WHERE bdms_keyid = :keyid
         """, nativeQuery = true)
     BAL_BdmTlMst findByKeyidNative(@Param("keyid") String keyid);
+    //delete
+        @Modifying(clearAutomatically = true)
+    @Query(value = "DELETE FROM BAL_BDM_TL_MST WHERE BDMS_KEYID = :keyid", nativeQuery = true)
+    int deleteByKeyidNative(@Param("keyid") String keyid);
 }
 
 

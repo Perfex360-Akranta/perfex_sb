@@ -474,4 +474,44 @@ List<Map<String, Object>> getEmpCostActual(@Param("woId") String woId);
         """, nativeQuery = true)
     WomTlWomst findByKeyidNative(@Param("keyid") String keyid);
 
+    //-----------------delete
+        @Query(value = """
+            SELECT WOMS_KEYID
+            FROM BAL_WOM_TL_WOMST
+            WHERE WOMS_ACTIVITYID = :bdmKeyid
+            """, nativeQuery = true)
+    List<String> findWoIdsByActivityId(@Param("bdmKeyid") String bdmKeyid);
+
+    // Legacy: BAL_BdmTlMstSql.getUpdateWoSql(...)
+    @Modifying(clearAutomatically = true)
+    @Query(value = """
+            UPDATE BAL_WOM_TL_WOMST
+            SET WOMS_ALLOTTEDDATE = DATE '1801-01-01',
+                WOMS_ALLOTTEDTO = '{}',
+                WOMS_ALLOTTEDFLAG = 'N',
+                WOMS_ALLOTTEDREMARKS = '{}',
+                WOMS_ALLOTTEDSOURCE = '{}',
+                WOMS_ACTIVITYID = '{}',
+                WOMS_PRODUCTIONSTARTFLAG = 'N',
+                WOMS_PRODUCTIONREMARKS = '{}',
+                WOMS_PRODUCTIONBY = '{}',
+                WOMS_PRODUCTIONSTARTDATE = DATE '1801-01-01',
+                WOMS_WORKSTARTFLAG = 'N',
+                WOMS_WORKSTARTDATE = DATE '1801-01-01',
+                WOMS_WORKENDFLAG = 'N',
+                WOMS_WORKENDDATE = DATE '2100-12-31',
+                WOMS_STATUS = 'B',
+                WOMS_FINALSTATUS = 'BOOKED',
+                WOMS_FINALACTIVITYTYPE = 'X',
+                WOMS_ACCEPTEDFLAG = 'N',
+                WOMS_ACCEPTEDDATE = DATE '1801-01-01'
+            WHERE WOMS_KEYID = :woId
+            """, nativeQuery = true)
+    int resetWorkOrderOnBdDelete(@Param("woId") String woId);
+
+    @Modifying(clearAutomatically = true)
+    @Query(value = "DELETE FROM SAP_EXTERNAL_SERVICE_MST WHERE EXTM_NOTIFICATIONNO = :bdmKeyid",
+            nativeQuery = true)
+    int deleteSapExternalService(@Param("bdmKeyid") String bdmKeyid);
+
 }
